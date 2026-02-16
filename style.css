@@ -1,0 +1,61 @@
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background-color: #f8f9fa;
+}
+
+
+body.login-body {
+    background-color: #f0f2f5;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-card {
+    width: 100%;
+    max-width: 400px;
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+    background: white;
+    border-top: 6px solid #1b5e20;
+}
+
+.deped-logo {
+    width: 130px;
+    height: auto;
+    margin-bottom: 20px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+
+.btn-deped {
+    background-color: #1b5e20;
+    color: white;
+    font-weight: 600;
+    padding: 12px;
+}
+
+.btn-deped:hover {
+    background-color: #002244;
+    color: white;
+}
+
+
+.badge.bg-warning {
+    background-color: #fff3cd !important;
+    color: #856404;
+}
+
+.badge.bg-info {
+    background-color: #d1ecf1 !important;
+    color: #0c5460;
+}
+
+.badge.bg-success {
+    background-color: #d4edda !important;
+    color: #155724;
+}
