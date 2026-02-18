@@ -53,6 +53,7 @@ if (isset($_POST['login'])) {
 <head>
     <meta charset="UTF-8">
     <title>DepEd Helpdesk - Login</title>
+    <link rel="icon" href="deped_rovtab.png" type="image/png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -60,7 +61,7 @@ if (isset($_POST['login'])) {
 <body class="login-body">
 
     <div class="login-card text-center">
-        <img src="deped logo.png" alt="DepEd Logo" class="deped-logo">
+        <img src="deped_rov.jpg" alt="DepEd Logo" class="deped-logo">
         <h4 class="fw-bold mb-1" style="color: #003366;">ICT Helpdesk</h4>
         <p class="text-muted small mb-4">Regional Office V - Rawis, Legazpi</p>
 
