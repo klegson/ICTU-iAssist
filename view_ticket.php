@@ -33,10 +33,10 @@ if (isset($_GET['id'])) {
 }
 
 $statusColor = 'bg-secondary';
-if ($ticket['status'] == 'Pending') $statusColor = 'bg-warning text-dark';
-if ($ticket['status'] == 'Processing') $statusColor = 'bg-primary';
-if ($ticket['status'] == 'Resolved') $statusColor = 'bg-success';
-if ($ticket['status'] == 'Closed') $statusColor = 'bg-dark';
+if ($row['status'] == 'Pending') $badgeClass = 'bg-warning text-dark';
+if ($row['status'] == 'Approved by IT') $badgeClass = 'bg-info text-dark';
+if ($row['status'] == 'Processing') $badgeClass = 'bg-primary';
+if ($row['status'] == 'Completed') $badgeClass = 'bg-success';
 
 $created = date("F d, Y • h:i A", strtotime($ticket['createdAt']));
 $updated = $ticket['updatedAt'] ? date("F d, Y • h:i A", strtotime($ticket['updatedAt'])) : 'No updates yet';
@@ -77,65 +77,78 @@ $updated = $ticket['updatedAt'] ? date("F d, Y • h:i A", strtotime($ticket['up
                         </a>
                     </div>
 
-                    <div class="row">
-                        <div class="col-lg-8">
-                            <div class="card shadow-sm border-0 mb-4">
-                                <div class="card-body p-4">
-                                    <h5 class="fw-bold text-primary mb-3"><?php echo htmlspecialchars($ticket['subject']); ?></h5>
+                    <div class="col-lg-8">
+                        <div class="card shadow-sm border-0 mb-4">
+                            <div class="card-body p-4">
+                                <h5 class="fw-bold text-primary mb-3"><?php echo htmlspecialchars($ticket['subject']); ?></h5>
 
-                                    <div class="p-3 bg-light rounded border">
-                                        <p class="mb-0" style="white-space: pre-line;"><?php echo htmlspecialchars($ticket['description']); ?></p>
-                                    </div>
-
+                                <div class="p-3 bg-light rounded border">
+                                    <p class="mb-0" style="white-space: pre-line;"><?php echo htmlspecialchars($ticket['description']); ?></p>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="col-lg-4">
-                            <div class="card shadow-sm border-0">
-                                <div class="card-header bg-white fw-bold py-3">
-                                    Ticket Information
+                        </div> <?php if (!empty($ticket['remarks'])): ?>
+                            <div class="card mt-4 border-primary shadow-sm">
+                                <div class="card-header bg-primary text-white fw-bold">
+                                    <i class="bi bi-chat-dots-fill me-2"></i> Officer's Response
                                 </div>
-                                <div class="card-body">
-                                    <div class="mb-3">
-                                        <label class="small text-muted fw-bold d-block">STATUS</label>
-                                        <span class="badge <?php echo $statusColor; ?> px-3 py-2 mt-1">
-                                            <?php echo $ticket['status']; ?>
-                                        </span>
+                                <div class="card-body bg-light">
+                                    <p class="mb-0 text-dark" style="white-space: pre-line;">
+                                        <?php echo htmlspecialchars($ticket['remarks']); ?>
+                                    </p>
+                                    <div class="text-end mt-2">
+                                        <small class="text-muted fst-italic">
+                                            - Updated by ICT Officer on <?php echo date("M d, Y • h:i A", strtotime($ticket['updatedAt'])); ?>
+                                        </small>
                                     </div>
-
-                                    <div class="mb-3">
-                                        <label class="small text-muted fw-bold d-block">CATEGORY</label>
-                                        <span class="fs-6"><?php echo htmlspecialchars($ticket['categoryName'] ?? 'General'); ?></span>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label class="small text-muted fw-bold d-block">LAST UPDATED</label>
-                                        <span class="small text-dark"><?php echo $updated; ?></span>
-                                    </div>
-
-                                    <?php if ($ticket['status'] == 'Pending'): ?>
-                                        <hr>
-                                        <div class="d-grid gap-2">
-                                            <a href="edit_ticket.php?id=<?php echo $ticketId; ?>" class="btn btn-outline-primary btn-sm">
-                                                <i class="bi bi-pencil me-1"></i> Edit Ticket
-                                            </a>
-                                            <a href="delete_ticket.php?id=<?php echo $ticketId; ?>"
-                                                class="btn btn-outline-danger btn-sm"
-                                                onclick="return confirm('Are you sure?')">
-                                                <i class="bi bi-trash me-1"></i> Cancel Request
-                                            </a>
-                                        </div>
-                                    <?php endif; ?>
-
                                 </div>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="card shadow-sm border-0">
+                            <div class="card-header bg-white fw-bold py-3">
+                                Ticket Information
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="small text-muted fw-bold d-block">STATUS</label>
+                                    <span class="badge <?php echo $statusColor; ?> px-3 py-2 mt-1">
+                                        <?php echo $ticket['status']; ?>
+                                    </span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="small text-muted fw-bold d-block">CATEGORY</label>
+                                    <span class="fs-6"><?php echo htmlspecialchars($ticket['categoryName'] ?? 'General'); ?></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="small text-muted fw-bold d-block">LAST UPDATED</label>
+                                    <span class="small text-dark"><?php echo $updated; ?></span>
+                                </div>
+
+                                <?php if ($ticket['status'] == 'Pending'): ?>
+                                    <hr>
+                                    <div class="d-grid gap-2">
+                                        <a href="edit_ticket.php?id=<?php echo $ticketId; ?>" class="btn btn-outline-primary btn-sm">
+                                            <i class="bi bi-pencil me-1"></i> Edit Ticket
+                                        </a>
+                                        <a href="delete_ticket.php?id=<?php echo $ticketId; ?>"
+                                            class="btn btn-outline-danger btn-sm"
+                                            onclick="return confirm('Are you sure?')">
+                                            <i class="bi bi-trash me-1"></i> Cancel Request
+                                        </a>
+                                    </div>
+                                <?php endif; ?>
+
                             </div>
                         </div>
                     </div>
-
                 </div>
+
             </div>
         </div>
+    </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

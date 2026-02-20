@@ -189,13 +189,15 @@ if (isset($_GET['delete_id'])) {
                                         while ($row = $stmt->fetch()) {
 
                                             $statusColor = 'bg-secondary';
-                                            if ($row['status'] == 'Pending') $statusColor = 'bg-warning text-dark';
-                                            if ($row['status'] == 'Processing') $statusColor = 'bg-primary';
-                                            if ($row['status'] == 'Resolved') $statusColor = 'bg-success';
-                                            if ($row['status'] == 'Closed') $statusColor = 'bg-dark';
+                                            $badgeClass = 'bg-secondary';
+                                            if ($row['status'] == 'Pending') $badgeClass = 'bg-warning text-dark';
+                                            if ($row['status'] == 'Approved by IT') $badgeClass = 'bg-info text-dark';
+                                            if ($row['status'] == 'Processing') $badgeClass = 'bg-primary';
+                                            if ($row['status'] == 'Completed') $badgeClass = 'bg-success';
 
                                             $rawDate = !empty($row['updatedAt']) ? $row['updatedAt'] : $row['createdAt'];
-                                            $date = date("M d, Y • h:i A", strtotime($rawDate));
+                                            $exactDate = date("M d, Y", strtotime($row['createdAt']));
+                                            $aging = timeAgo($row['createdAt']);
 
                                             echo "<tr>";
                                             echo "<td class='ps-4 fw-bold text-muted'>#" . $row['ticketId'] . "</td>";
@@ -204,9 +206,12 @@ if (isset($_GET['delete_id'])) {
 
                                             echo "<td>" . htmlspecialchars($row['categoryName'] ?? 'General') . "</td>";
 
-                                            echo "<td><span class='badge rounded-pill " . $statusColor . "'>" . $row['status'] . "</span></td>";
+                                            echo "<td><span class='badge rounded-pill " . $badgeClass . "'>" . $row['status'] . "</span></td>";
 
-                                            echo "<td class='text-muted small'>" . $date . "</td>";
+                                            echo "<td>
+                                            <span class='d-block'>" . $exactDate . "</span>
+                                            <span class='badge bg-light border text-dark mt-1'><i class='bi bi-clock me-1'></i>" . $aging . "</span>
+                                            </td>";
 
                                             echo "<td class='text-end pe-4'>";
 
@@ -280,7 +285,7 @@ if (isset($_GET['delete_id'])) {
                 plugins: {
                     legend: {
                         display: false
-                    } // Hide legend for cleaner look
+                    }
                 }
             }
         });

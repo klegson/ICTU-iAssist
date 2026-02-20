@@ -38,7 +38,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
         </li>
 
         <li class="nav-item mb-2">
-            <a href="request_account.php" class="nav-link d-flex align-items-center <?php echo $currentPage == 'request_account.php' ? 'active-sidebar' : 'text-white'; ?>">
+            <a href="starlink_user.php" class="nav-link d-flex align-items-center <?php echo $currentPage == 'starlink_user.php' ? 'active-sidebar' : 'text-white'; ?>">
                 <i class="bi bi-box-seam me-3 fs-5"></i>
                 Borrow Starlink
             </a>
