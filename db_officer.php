@@ -41,7 +41,12 @@ $resolvedCount = $pdo->query($resolvedSql)->fetchColumn();
         <div class="row">
             <div class="col-lg-3 col-xl-2 d-none d-lg-block p-0">
                 <?php $page = 'dashboard';
-                include 'sidebar_officer.php'; ?>
+                if ($_SESSION['role'] === 'Technician') {
+                    include 'sidebar_technician.php';
+                } else {
+                    include 'sidebar_officer.php';
+                }
+                ?>
             </div>
 
             <div class="col-lg-9 col-xl-10 py-4">

@@ -2,7 +2,7 @@
 session_start();
 require 'db.php';
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Officer') {
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Officer' && $_SESSION['role'] !== 'Technician') {
     header("Location: login.php");
     exit;
 }
@@ -27,7 +27,13 @@ $page = 'users';
     <div class="container-fluid">
         <div class="row">
             <div class="col-lg-3 col-xl-2 d-none d-lg-block p-0">
-                <?php include 'sidebar_officer.php'; ?>
+                <?php
+                if ($_SESSION['role'] === 'Technician') {
+                    include 'sidebar_tech.php';
+                } else {
+                    include 'sidebar_officer.php';
+                }
+                ?>
             </div>
 
             <div class="col-lg-9 col-xl-10 py-4">

@@ -23,10 +23,12 @@ if (isset($_POST['update_ticket'])) {
     $newStatus = $_POST['status'];
     $newPriority = $_POST['priority'];
     $remarks = $_POST['remarks'];
+    $assignedTo = $_POST['assignedTo'] ?? null;
+    $ticketId = $_GET['id'];
 
     $assignedTo = !empty($_POST['assignedTo']) ? $_POST['assignedTo'] : null;
 
-    $sql = "UPDATE ticket SET status = ?, priority = ?, remarks = ?, updatedAt = NOW() WHERE ticketId = ?";
+    $sql = "UPDATE ticket SET status = ?, priority = ?, remarks = ?, assignedTo = ?, updatedAt = NOW() WHERE ticketId = ?";
     $stmt = $pdo->prepare($sql);
 
     if ($stmt->execute([$newStatus, $newPriority, $remarks, $assignedTo, $ticketId])) {
@@ -143,6 +145,7 @@ $technicians = $techStmt->fetchAll();
                                         <i class="bi bi-sliders me-2"></i> Action Panel
                                     </div>
                                     <div class="card-body bg-white">
+
                                         <?php if ($_SESSION['role'] === 'Officer'): ?>
                                             <div class="mb-3">
                                                 <label class="form-label fw-bold small">ASSIGN TO TECHNICIAN</label>
@@ -150,14 +153,16 @@ $technicians = $techStmt->fetchAll();
                                                     <option value="">-- Unassigned --</option>
 
                                                     <?php foreach ($technicians as $tech): ?>
-                                                        <option value="<?php echo $tech['userId']; ?>"
-                                                            <?php if ($ticket['assignedTo'] == $tech['userId']) echo 'selected'; ?>>
+                                                        <option value="<?php echo $tech['userId']; ?>" <?php if ($ticket['assignedTo'] == $tech['userId']) echo 'selected'; ?>>
                                                             🔧 <?php echo htmlspecialchars($tech['firstName'] . ' ' . $tech['lastName']); ?>
                                                         </option>
                                                     <?php endforeach; ?>
 
                                                 </select>
                                             </div>
+
+                                        <?php else: ?>
+                                            <input type="hidden" name="assignedTo" value="<?php echo htmlspecialchars($ticket['assignedTo']); ?>">
                                         <?php endif; ?>
                                         <label class="form-label fw-bold small">UPDATE STATUS</label>
                                         <select class="form-select form-select-lg fw-bold" name="status">

@@ -23,9 +23,10 @@ if (isset($_GET['id'])) {
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$ticketId, $userId]);
     $ticket = $stmt->fetch();
-
     if (!$ticket) {
-        die("Error: Ticket not found or access denied.");
+        echo "<h3>Error: Ticket not found or has been deleted.</h3>";
+        echo "<a href='db_user.php'>Return to Dashboard</a>";
+        exit;
     }
 } else {
     header("Location: db_user.php");
@@ -33,10 +34,12 @@ if (isset($_GET['id'])) {
 }
 
 $statusColor = 'bg-secondary';
-if ($row['status'] == 'Pending') $badgeClass = 'bg-warning text-dark';
-if ($row['status'] == 'Approved by IT') $badgeClass = 'bg-info text-dark';
-if ($row['status'] == 'Processing') $badgeClass = 'bg-primary';
-if ($row['status'] == 'Completed') $badgeClass = 'bg-success';
+
+$statusColor = 'bg-secondary';
+if ($ticket['status'] == 'Pending') $statusColor = 'bg-warning text-dark';
+if ($ticket['status'] == 'Approved by IT') $statusColor = 'bg-info text-dark';
+if ($ticket['status'] == 'Processing') $statusColor = 'bg-primary';
+if ($ticket['status'] == 'Completed') $statusColor = 'bg-success';
 
 $created = date("F d, Y • h:i A", strtotime($ticket['createdAt']));
 $updated = $ticket['updatedAt'] ? date("F d, Y • h:i A", strtotime($ticket['updatedAt'])) : 'No updates yet';

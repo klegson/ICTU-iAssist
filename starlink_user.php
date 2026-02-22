@@ -16,28 +16,25 @@ $page = 'starlink';
 $msg = "";
 $alertClass = "";
 
+$refNumber = "SL-" . date("Ym") . "-" . rand(1000, 9999);
+
 if (isset($_POST['save_event'])) {
     $eventName = trim($_POST['event_name']);
     $description = trim($_POST['description']);
     $eventDate = $_POST['event_date'];
     $location = trim($_POST['location']);
-
+    $refNumber = $_POST['ref_number'];
     $userId = $_SESSION['user_id'];
-
-    $refNumber = "SL-" . date("Ym") . "-" . rand(1000, 9999);
 
     $sql = "INSERT INTO starlink (reference_number, userId, event_name, description, event_date, location) 
             VALUES (?, ?, ?, ?, ?, ?)";
     $stmt = $pdo->prepare($sql);
 
     if ($stmt->execute([$refNumber, $userId, $eventName, $description, $eventDate, $location])) {
-        $msg = "Success! Your Reference Number is: <strong>" . $refNumber . "</strong><br><br>
-                <a href='generate_pdf.php?ref=" . $refNumber . "' class='btn btn-success fw-bold' target='_blank'>
-                    <i class='bi bi-printer-fill me-2'></i> Download Filled Agreement Form
-                </a>";
+        $msg = "Success! Starlink event submitted. Your Reference Number is: <strong>" . $refNumber . "</strong>";
         $alertClass = "alert-success";
     } else {
-        $msg = "Error: Could not save event. Please try again.";
+        $msg = "Error: Could not submit the event.";
         $alertClass = "alert-danger";
     }
 }
@@ -93,7 +90,7 @@ if (isset($_POST['save_event'])) {
                                             <div>
                                                 <h6 class="fw-bold mb-1">Required: Starlink Borrowing Agreement</h6>
                                                 <p class="mb-2 small">You must download, read, and sign the official agreement form prior to your event.</p>
-                                                <a href="ICT-STARLINK-AGREEMENT-FORM.pdf" class="btn btn-sm btn-outline-primary fw-bold" download>
+                                                <a href="Links/ICT-STARLINK-AGREEMENT-FORM.pdf" class="btn btn-sm btn-outline-primary fw-bold" download>
                                                     <i class="bi bi-download me-1"></i> Download Form
                                                 </a>
                                             </div>
