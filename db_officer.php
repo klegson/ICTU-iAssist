@@ -53,6 +53,17 @@ $resolvedCount = $pdo->query($resolvedSql)->fetchColumn();
                 <div class="container">
 
                     <h3 class="fw-bold text-dark mb-4">Officer Dashboard</h3>
+                    <?php if (isset($_SESSION['flash_msg'])): ?>
+                        <div class="alert <?php echo $_SESSION['flash_type']; ?> alert-dismissible fade show shadow-sm mb-4" role="alert">
+                            <i class="bi bi-check-circle-fill me-2"></i>
+                            <strong>Success!</strong> <?php echo $_SESSION['flash_msg']; ?>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        <?php
+                        unset($_SESSION['flash_msg']);
+                        unset($_SESSION['flash_type']);
+                        ?>
+                    <?php endif; ?>
 
                     <div class="row mb-4">
                         <div class="col-md-4">

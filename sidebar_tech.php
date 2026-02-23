@@ -1,6 +1,6 @@
 <div class="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark" style="width: 280px; height: 100vh; position: fixed;">
+    <img src="deped_rov.jpg" alt="Logo" class="me-3 rounded-circle shadow-sm" style="width: 50px; height: 50px; object-fit: cover; border: 2px solid white;">
     <a href="db_technician.php" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
-        <i class="bi bi-tools fs-4 me-2"></i>
         <span class="fs-5 fw-bold">Technician</span>
     </a>
     <hr>

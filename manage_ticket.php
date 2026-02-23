@@ -1,8 +1,4 @@
 <?php
-header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
-header("Cache-Control: post-check=0, pre-check=0", false);
-header("Pragma: no-cache");
-
 session_start();
 require 'db.php';
 
@@ -11,12 +7,37 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'Officer' && $_SESSIO
     exit;
 }
 
-$officerId = $_SESSION['user_id'];
+$msg = "";
+$alertClass = "";
+
 $ticketId = $_GET['id'] ?? null;
 
-if (!$ticketId) {
-    header("Location: db_officer.php");
-    exit;
+if (isset($_POST['update_ticket'])) {
+    $newStatus = $_POST['status'];
+    $newPriority = $_POST['priority'];
+    $remarks = $_POST['remarks'];
+    $ticketId = $_GET['id'];
+
+    $assignedTo = !empty($_POST['assignedTo']) ? $_POST['assignedTo'] : null;
+
+    $sql = "UPDATE ticket SET status = ?, priority = ?, remarks = ?, assignedTo = ?, updatedAt = NOW() WHERE ticketId = ?";
+    $stmt = $pdo->prepare($sql);
+
+    if ($stmt->execute([$newStatus, $newPriority, $remarks, $assignedTo, $ticketId])) {
+
+        $_SESSION['flash_msg'] = "Ticket #" . $ticketId . " updated successfully!";
+        $_SESSION['flash_type'] = "alert-success";
+
+        if ($_SESSION['role'] === 'Officer') {
+            header("Location: db_officer.php");
+        } else {
+            header("Location: db_technician.php");
+        }
+        exit;
+    } else {
+        $msg = "Error updating ticket.";
+        $alertClass = "alert-danger";
+    }
 }
 
 if (isset($_POST['update_ticket'])) {
@@ -24,7 +45,7 @@ if (isset($_POST['update_ticket'])) {
     $newPriority = $_POST['priority'];
     $remarks = $_POST['remarks'];
     $assignedTo = $_POST['assignedTo'] ?? null;
-    $ticketId = $_GET['id'];
+
 
     $assignedTo = !empty($_POST['assignedTo']) ? $_POST['assignedTo'] : null;
 
