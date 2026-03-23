@@ -1,28 +1,43 @@
-<div class="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark" style="width: 280px; height: 100vh; position: fixed;">
-    <img src="deped_rov.jpg" alt="Logo" class="me-3 rounded-circle shadow-sm" style="width: 50px; height: 50px; object-fit: cover; border: 2px solid white;">
-    <a href="db_technician.php" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
-        <span class="fs-5 fw-bold">Technician</span>
+<?php
+$currentPage = basename($_SERVER['PHP_SELF']);
+?>
+
+<div class="d-flex flex-column p-3 sidebar-wrapper" style="width: 280px; min-height: 100vh;">
+
+    <a href="db_technician.php" class="d-flex align-items-center mb-5 mt-2 text-white text-decoration-none px-2">
+        <img src="deped_rov.jpg" alt="DepEd Logo" class="me-3 bg-white rounded-circle p-1" style="width: 50px; height: 50px; object-fit: cover;">
+        <div class="d-flex flex-column">
+            <span class="fs-6 fw-bold" style="letter-spacing: -0.5px;">ICT Technician</span>
+            <span style="font-size: 10px; color: #adb5bd; letter-spacing: 0.5px;">REGION V - BICOL</span>
+        </div>
     </a>
-    <hr>
+
     <ul class="nav nav-pills flex-column mb-auto">
-        <li class="nav-item mb-2">
-            <a href="db_technician.php" class="nav-link active d-flex align-items-center">
-                <i class="bi bi-list-task me-3 fs-5"></i>
-                My Assigned Tasks
+        <li class="nav-item">
+            <a href="db_technician.php" class="sidebar-link <?php echo $currentPage == 'db_technician.php' ? 'active-sidebar' : ''; ?>">
+                <i class="bi bi-speedometer2"></i> My Tasks
             </a>
         </li>
-        <li class="nav-item mb-2">
-            <a href="users.php" class="nav-link d-flex align-items-center <?php echo ($page == 'users') ? 'active' : 'text-white'; ?>">
-                <i class="bi bi-people-fill me-3 fs-5"></i>
-                Manage Users
+        <li class="nav-item">
+            <a href="all_tickets.php" class="sidebar-link <?php echo $currentPage == 'all_tickets.php' ? 'active-sidebar' : ''; ?>">
+                <i class="bi bi-ticket-detailed"></i> All Tickets
             </a>
+        </li>
+        <li class="nav-item">
+            <a href="all_tickets.php" class="sidebar-link <?php echo $currentPage == 'all_tickets.php' ? 'active-sidebar' : ''; ?>">
+                <i class="bi bi-person-plus"></i> Account Requests
+            </a>
+        <li class="nav-item">
+            <a href="starlink_officer.php" class="sidebar-link <?php echo $currentPage == 'starlink_officer.php' ? 'active-sidebar' : ''; ?>">
+                <i class="bi bi-hdd-network-fill"></i> Starlink Inventory
+            </a>
+        </li>
         </li>
     </ul>
-    <hr>
-    <div class="dropdown">
-        <a href="logout.php" class="d-flex align-items-center text-white text-decoration-none">
-            <i class="bi bi-box-arrow-right me-2"></i>
-            <strong>Logout</strong>
+
+    <div class="mt-auto mb-3">
+        <a href="logout.php" class="sidebar-link">
+            <i class="bi bi-box-arrow-left"></i> Sign Out
         </a>
     </div>
 </div>

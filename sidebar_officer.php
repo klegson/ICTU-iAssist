@@ -1,46 +1,48 @@
-<div class="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark" style="width: 280px; height: 100vh; position: fixed;">
-    <a href="db_officer.php" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
-        <img src="deped_rov.jpg" alt="Logo" class="me-3 rounded-circle shadow-sm" style="width: 50px; height: 50px; object-fit: cover; border: 2px solid white;">
-        <span class="fs-5 fw-bold">ICT Officer</span>
+<?php
+$currentPage = basename($_SERVER['PHP_SELF']);
+?>
+
+<div class="d-flex flex-column p-3 sidebar-wrapper" style="width: 280px; min-height: 100vh;">
+
+    <a href="db_officer.php" class="d-flex align-items-center mb-5 mt-2 text-white text-decoration-none px-2">
+        <img src="deped_rov.jpg" alt="DepEd Logo" class="me-3 bg-white rounded-circle p-1" style="width: 50px; height: 50px; object-fit: cover;">
+        <div class="d-flex flex-column">
+            <span class="fs-6 fw-bold" style="letter-spacing: -0.5px;">ICT Officer</span>
+            <span style="font-size: 10px; color: #adb5bd; letter-spacing: 0.5px;">REGION V - BICOL</span>
+        </div>
     </a>
-    <hr>
+
     <ul class="nav nav-pills flex-column mb-auto">
-        <li class="nav-item mb-2">
-            <a href="db_officer.php" class="nav-link d-flex align-items-center <?php echo ($page == 'dashboard') ? 'active' : 'text-white'; ?>">
-                <i class="bi bi-speedometer2 me-3 fs-5"></i>
-                Dashboard
+        <li class="nav-item">
+            <a href="db_officer.php" class="sidebar-link <?php echo $currentPage == 'db_officer.php' ? 'active-sidebar' : ''; ?>">
+                <i class="bi bi-speedometer2"></i> Dashboard
             </a>
         </li>
-        <li class="nav-item mb-2">
-            <a href="all_tickets.php" class="nav-link d-flex align-items-center <?php echo ($page == 'all_tickets') ? 'active' : 'text-white'; ?>">
-                <i class="bi bi-ticket-detailed me-3 fs-5"></i>
-                All Tickets
+        <li class="nav-item">
+            <a href="all_tickets.php" class="sidebar-link <?php echo $currentPage == 'all_tickets.php' ? 'active-sidebar' : ''; ?>">
+                <i class="bi bi-ticket-detailed"></i> All Tickets
             </a>
         </li>
-        <li class="nav-item mb-2">
-            <a href="reports.php" class="nav-link d-flex align-items-center <?php echo ($page == 'reports') ? 'active' : 'text-white'; ?>">
-                <i class="bi bi-bar-chart-line me-3 fs-5"></i>
-                Reports
-            </a>
-        <li class="nav-item mb-2">
-            <a href="starlink_officer.php" class="nav-link d-flex align-items-center <?php echo ($page == 'starlink') ? 'active' : 'text-white'; ?>">
-                <i class="bi bi-people-fill me-3 fs-5"></i>
-                Starlink Inventory
+        <li class="nav-item">
+            <a href="reports.php" class="sidebar-link <?php echo $currentPage == 'reports.php' ? 'active-sidebar' : ''; ?>">
+                <i class="bi bi-bar-chart-line"></i> Reports
             </a>
         </li>
+        <li class="nav-item">
+            <a href="starlink_officer.php" class="sidebar-link <?php echo $currentPage == 'starlink_officer.php' ? 'active-sidebar' : ''; ?>">
+                <i class="bi bi-hdd-network-fill"></i> Starlink Inventory
+            </a>
         </li>
-        <li class="nav-item mb-2">
-            <a href="users.php" class="nav-link d-flex align-items-center <?php echo ($page == 'users') ? 'active' : 'text-white'; ?>">
-                <i class="bi bi-people-fill me-3 fs-5"></i>
-                Manage Users
+        <li class="nav-item">
+            <a href="users.php" class="sidebar-link <?php echo $currentPage == 'users.php' ? 'active-sidebar' : ''; ?>">
+                <i class="bi bi-people-fill"></i> Manage Users
             </a>
         </li>
     </ul>
-    <hr>
-    <div class="dropdown">
-        <a href="logout.php" class="d-flex align-items-center text-white text-decoration-none">
-            <i class="bi bi-box-arrow-right me-2"></i>
-            <strong>Logout</strong>
+
+    <div class="mt-auto mb-3">
+        <a href="logout.php" class="sidebar-link">
+            <i class="bi bi-box-arrow-left"></i> Sign Out
         </a>
     </div>
 </div>

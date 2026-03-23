@@ -32,6 +32,7 @@ if (isset($_POST['login'])) {
         $_SESSION['user_id'] = $user['userId'];
         $_SESSION['role'] = $user['role'];
         $_SESSION['fullname'] = $user['firstName'] . ' ' . $user['lastName'];
+        $_SESSION['department_id'] = $user['departmentId'];
 
         if ($user['role'] === 'Officer') {
             header("Location: db_officer.php");

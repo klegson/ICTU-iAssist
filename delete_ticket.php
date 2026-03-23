@@ -20,9 +20,12 @@ if (isset($_GET['id'])) {
         $delStmt->execute([$ticketId]);
 
         header("Location: db_user.php?msg=deleted");
+        exit;
     } else {
         header("Location: db_user.php?error=cannot_delete");
+        exit;
     }
 } else {
     header("Location: db_user.php");
+    exit;
 }

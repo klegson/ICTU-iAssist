@@ -1,11 +1,20 @@
-body {
-    font-family: 'Segoe UI', sans-serif;
-    background-color: #f8f9fa;
+/* Global Variables */
+:root {
+    --deped-green: #1b5e20;
+    --deped-gold: #fbc02d;
+    --sidebar-bg: #1a1c1e;
+    --bg-light: #f4f6f9;
+    --card-radius: 12px;
 }
 
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-light);
+}
 
+/* Login Page */
 body.login-body {
-    background-color: #f0f2f5;
+    background-color: #e9ecef;
     height: 100vh;
     display: flex;
     align-items: center;
@@ -14,37 +23,143 @@ body.login-body {
 
 .login-card {
     width: 100%;
-    max-width: 400px;
+    max-width: 420px;
     padding: 40px;
-    border-radius: 15px;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+    border-radius: var(--card-radius);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
     background: white;
-    border-top: 6px solid #1b5e20;
 }
 
 .deped-logo {
-    width: 130px;
+    width: 100px;
     height: auto;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     display: block;
     margin-left: auto;
     margin-right: auto;
 }
 
+/* Header */
+.header-deped {
+    background-color: var(--deped-green) !important;
+    border-bottom: 4px solid var(--deped-gold);
+}
 
-.btn-deped {
-    background-color: #1b5e20;
+.btn-logout {
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white !important;
+    border-radius: 20px;
+    padding: 6px 20px;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+.btn-logout:hover {
+    background-color: white;
+    color: var(--deped-green) !important;
+}
+
+/* Sidebar */
+.sidebar-wrapper {
+    background-color: var(--sidebar-bg);
+    min-height: 100vh;
     color: white;
+}
+
+.sidebar-link {
+    color: #adb5bd;
+    padding: 12px 20px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.sidebar-link i {
+    margin-right: 15px;
+    font-size: 1.1rem;
+}
+
+.sidebar-link:hover {
+    color: white;
+}
+
+.sidebar-link.active-sidebar {
+    background-color: var(--deped-green);
+    color: white;
+}
+
+/* Cards & Widgets */
+.custom-card {
+    border: none;
+    border-radius: var(--card-radius);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    background: white;
+}
+
+.stat-card {
+    border-radius: var(--card-radius);
+    background: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    padding: 24px;
+}
+
+.border-top-warning {
+    border-top: 5px solid #ffc107;
+}
+
+.border-top-info {
+    border-top: 5px solid #0dcaf0;
+}
+
+.border-top-success {
+    border-top: 5px solid #198754;
+}
+
+/* Forms & Buttons */
+.form-label {
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-control,
+.form-select {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 12px 15px;
+    font-size: 0.95rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+    box-shadow: none;
+    border-color: var(--deped-green);
+    background-color: white;
+}
+
+.btn-deped-primary {
+    background-color: var(--deped-green);
+    color: white;
+    border-radius: 8px;
+    padding: 10px 24px;
     font-weight: 600;
-    padding: 12px;
+    border: none;
+    transition: all 0.2s;
 }
 
-.btn-deped:hover {
-    background-color: #002244;
+.btn-deped-primary:hover {
+    background-color: #144d1a;
     color: white;
 }
 
-
+/* Badges */
 .badge.bg-warning {
     background-color: #fff3cd !important;
     color: #856404;
@@ -58,22 +173,4 @@ body.login-body {
 .badge.bg-success {
     background-color: #d4edda !important;
     color: #155724;
-}
-
-.active-sidebar {
-    background-color: #ffffff !important;
-    color: #1a4d2e !important;
-    font-weight: bold;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
-}
-
-.nav-link:not(.active-sidebar):hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    transform: translateX(5px);
-    transition: all 0.2s ease;
-}
-
-.hover-danger:hover {
-    color: #ffcccc !important;
 }
