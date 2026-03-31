@@ -67,7 +67,7 @@ if (isset($_POST['submit_ticket'])) {
 
     <div class="d-flex" style="min-height: 100vh;">
         <div style="width: 280px; flex-shrink: 0;">
-            <?php include 'sidebar_user.php'; ?>
+            <?php include 'sidebar.php'; ?>
         </div>
 
         <div class="flex-grow-1" style="max-height: 100vh; overflow-y: auto;">

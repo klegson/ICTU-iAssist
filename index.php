@@ -2,7 +2,6 @@
 session_start();
 require 'db.php';
 
-
 if (isset($_SESSION['user_id'])) {
     if ($_SESSION['role'] === 'Officer') {
         header("Location: db_officer.php");
@@ -20,28 +19,34 @@ if (isset($_POST['login'])) {
     $input_email = trim($_POST['username']);
     $input_password = $_POST['password'];
 
-
     $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
     $stmt->execute([$input_email]);
     $user = $stmt->fetch();
 
-
     if ($user && password_verify($input_password, $user['password'])) {
 
-
-        $_SESSION['user_id'] = $user['userId'];
-        $_SESSION['role'] = $user['role'];
-        $_SESSION['fullname'] = $user['firstName'] . ' ' . $user['lastName'];
-        $_SESSION['department_id'] = $user['departmentId'];
-
-        if ($user['role'] === 'Officer') {
-            header("Location: db_officer.php");
-        } elseif ($user['role'] === 'Technician') {
-            header("Location: db_technician.php");
+        if (isset($user['isApproved']) && $user['isApproved'] == 0) {
+            $error_message = "Your account is currently pending administrator approval.";
         } else {
-            header("Location: db_user.php");
+            $_SESSION['user_id'] = $user['userId'];
+            $_SESSION['role'] = $user['role'];
+            $_SESSION['fullname'] = $user['firstName'] . ' ' . $user['lastName'];
+            $_SESSION['department_id'] = $user['departmentId'];
+
+            if (empty($user['signature']) && $user['role'] === 'User') {
+                header("Location: create_signature.php");
+                exit;
+            }
+
+            if ($user['role'] === 'Officer') {
+                header("Location: db_officer.php");
+            } elseif ($user['role'] === 'Technician') {
+                header("Location: db_technician.php");
+            } else {
+                header("Location: db_user.php");
+            }
+            exit;
         }
-        exit;
     } else {
         $error_message = "Invalid email or password.";
     }
@@ -67,7 +72,9 @@ if (isset($_POST['login'])) {
         <p class="text-muted small mb-4">Regional Office V - Rawis, Legazpi</p>
 
         <?php if ($error_message): ?>
-            <div class="alert alert-danger py-2 small"><?php echo $error_message; ?></div>
+            <div class="alert <?php echo strpos($error_message, 'pending') !== false ? 'alert-warning' : 'alert-danger'; ?> py-2 small">
+                <?php echo $error_message; ?>
+            </div>
         <?php endif; ?>
 
         <form action="" method="POST">
@@ -77,7 +84,7 @@ if (isset($_POST['login'])) {
             </div>
             <div class="mb-4 text-start">
                 <label class="form-label small fw-bold text-secondary">Password</label>
-                <input type="password" name="password" class="form-control" placeholder="Enter password" required>
+                <input type="password" name="password" class="form-control" placeholder="Enter password" autocomplete="current-password" required>
             </div>
             <button type="submit" name="login" class="btn btn-deped w-100">SIGN IN</button>
         </form>

@@ -6,23 +6,19 @@ if (session_status() === PHP_SESSION_NONE) {
 $notifCount = 0;
 $notifications = [];
 
-// Fetch notifications from the dedicated table
 if (isset($_SESSION['user_id']) && isset($pdo)) {
     $userId = $_SESSION['user_id'];
 
-    // Grab the 8 most recent notifications for this specific user
     $nSql = "SELECT notifId, message, isRead, createdAt FROM notification WHERE userId = ? ORDER BY createdAt DESC LIMIT 8";
     $nStmt = $pdo->prepare($nSql);
     $nStmt->execute([$userId]);
     $notifications = $nStmt->fetchAll();
 
-    // Count ONLY unread notifications for the red badge
     $cStmt = $pdo->prepare("SELECT COUNT(*) FROM notification WHERE userId = ? AND isRead = 0");
     $cStmt->execute([$userId]);
     $notifCount = $cStmt->fetchColumn();
 }
 ?>
-
 <nav class="navbar navbar-expand-lg header-deped shadow-sm">
     <div class="container-fluid px-4">
         <button class="navbar-toggler border-white" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -59,12 +55,10 @@ if (isset($_SESSION['user_id']) && isset($pdo)) {
                                 $bgClass = ($n['isRead'] == 0) ? 'bg-light' : 'bg-white';
                                 $textWeight = ($n['isRead'] == 0) ? 'fw-bold text-dark' : 'text-muted';
 
-                                // --- EXTRACT TICKET ID & BUILD LINK ---
                                 $ticketId = null;
                                 if (preg_match('/#(\d+)/', $n['message'], $matches)) {
                                     $ticketId = $matches[1];
                                 }
-
                                 if ($ticketId) {
                                     $finalUrl = ($_SESSION['role'] === 'Officer' || $_SESSION['role'] === 'Technician')
                                         ? "manage_ticket.php?id=" . $ticketId
@@ -73,9 +67,7 @@ if (isset($_SESSION['user_id']) && isset($pdo)) {
                                     $finalUrl = "#";
                                 }
 
-                                // Route through our new middleman script!
                                 $targetUrl = "read_notif.php?id=" . $n['notifId'] . "&url=" . urlencode($finalUrl);
-                                // --------------------------------------
                                 ?>
                                 <li>
                                     <a class="dropdown-item py-3 border-bottom text-wrap custom-notif-hover <?php echo $bgClass; ?>" href="<?php echo $targetUrl; ?>">
@@ -104,11 +96,6 @@ if (isset($_SESSION['user_id']) && isset($pdo)) {
                         <?php endif; ?>
                     </ul>
                 </li>
-
-                <li class="nav-item me-4 text-white" style="font-size: 0.9rem;">
-                    Logged in as: <span class="fw-bold"><?php echo strtoupper(htmlspecialchars($_SESSION['fullname'] ?? 'User')); ?></span>
-                </li>
-
                 <li class="nav-item">
                     <a class="nav-link btn btn-logout fw-bold px-3 py-1" href="logout.php">
                         LOGOUT

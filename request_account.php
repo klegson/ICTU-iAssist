@@ -4,10 +4,8 @@ header("Cache-Control: post-check=0, pre-check=0", false);
 header("Pragma: no-cache");
 session_start();
 
-// FIX: Changed to require_once to prevent the fatal redeclaration error
 require_once 'db.php';
 
-// Access Control
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'User') {
     header("Location: login.php");
     exit;
@@ -16,7 +14,6 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'User') {
 $userId = $_SESSION['user_id'];
 $msg = "";
 
-// Form Processing
 if (isset($_POST['submit_account'])) {
     $serviceType = $_POST['categoryId'];
     $reason = trim($_POST['reason']);
@@ -46,7 +43,7 @@ if (isset($_POST['submit_account'])) {
     $userDeptId = $deptStmt->fetchColumn();
 
     if (!$userDeptId) {
-        $userDeptId = 1; // Default to ID 1 if no department found
+        $userDeptId = 1;
     }
 
     $stmt = $pdo->prepare("INSERT INTO ticket (subject, categoryId, description, priority, status, departmentId, userId) VALUES (?, ?, ?, ?, 'Pending', ?, ?)");
@@ -77,7 +74,7 @@ if (isset($_POST['submit_account'])) {
 
     <div class="d-flex" style="min-height: 100vh;">
         <div style="width: 280px; flex-shrink: 0;">
-            <?php include 'sidebar_user.php'; ?>
+            <?php include 'sidebar.php'; ?>
         </div>
 
         <div class="flex-grow-1" style="max-height: 100vh; overflow-y: auto;">

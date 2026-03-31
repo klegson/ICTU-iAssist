@@ -48,7 +48,7 @@ function formatTimeAgo($datetime)
         <div style="width: 280px; flex-shrink: 0;">
             <?php
             $page = 'dashboard';
-            include 'sidebar_officer.php';
+            include 'sidebar.php';
             ?>
         </div>
 

@@ -41,9 +41,9 @@ function formatTimeAgo($datetime)
             <?php
             $page = 'all_tickets';
             if ($_SESSION['role'] === 'Technician') {
-                include 'sidebar_tech.php';
+                include 'sidebar.php';
             } else {
-                include 'sidebar_officer.php';
+                include 'sidebar.php';
             }
             ?>
         </div>
