@@ -42,6 +42,7 @@ function formatTimeAgo($datetime)
         </div>
 
         <div class="flex-grow-1 bg-light" style="height: 100vh; overflow-y: auto;">
+            <?php include 'header.php'; ?>
 
             <div class="container-fluid py-5 px-5">
 

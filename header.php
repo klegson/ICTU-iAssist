@@ -5,6 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 $notifCount = 0;
 $notifications = [];
+$actionRequired = [];
 
 if (isset($_SESSION['user_id']) && isset($pdo)) {
     $userId = $_SESSION['user_id'];
@@ -17,6 +18,12 @@ if (isset($_SESSION['user_id']) && isset($pdo)) {
     $cStmt = $pdo->prepare("SELECT COUNT(*) FROM notification WHERE userId = ? AND isRead = 0");
     $cStmt->execute([$userId]);
     $notifCount = $cStmt->fetchColumn();
+
+    $arStmt = $pdo->prepare("SELECT ticketId, updatedAt FROM ticket WHERE userId = ? AND status = 'Resolved' ORDER BY updatedAt DESC");
+    $arStmt->execute([$userId]);
+    $actionRequired = $arStmt->fetchAll();
+
+    $totalAlerts = $notifCount + count($actionRequired);
 }
 ?>
 <nav class="navbar navbar-expand-lg header-deped shadow-sm">
@@ -31,9 +38,9 @@ if (isset($_SESSION['user_id']) && isset($pdo)) {
                 <li class="nav-item dropdown me-4">
                     <a class="nav-link text-white position-relative d-flex align-items-center" href="#" id="notifDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-bell-fill fs-5"></i>
-                        <?php if ($notifCount > 0): ?>
+                        <?php if (isset($totalAlerts) && $totalAlerts > 0): ?>
                             <span class="position-absolute top-25 start-75 translate-middle badge rounded-pill bg-danger border border-light" style="font-size: 0.65rem;">
-                                <?php echo $notifCount > 99 ? '99+' : $notifCount; ?>
+                                <?php echo $totalAlerts > 99 ? '99+' : $totalAlerts; ?>
                             </span>
                         <?php endif; ?>
                     </a>
@@ -42,11 +49,31 @@ if (isset($_SESSION['user_id']) && isset($pdo)) {
                         <li>
                             <div class="dropdown-header d-flex justify-content-between align-items-center fw-bold text-dark border-bottom pb-2">
                                 <span>Notifications</span>
-                                <?php if ($notifCount > 0): ?>
-                                    <span class="badge bg-primary rounded-pill"><?php echo $notifCount; ?> New</span>
+                                <?php if (isset($totalAlerts) && $totalAlerts > 0): ?>
+                                    <span class="badge bg-primary rounded-pill"><?php echo $totalAlerts; ?> New</span>
                                 <?php endif; ?>
                             </div>
                         </li>
+
+                        <?php if (count($actionRequired) > 0): ?>
+                            <?php foreach ($actionRequired as $ar): ?>
+                                <li>
+                                    <a class="dropdown-item py-3 border-bottom text-wrap custom-notif-hover bg-warning bg-opacity-10" href="view_ticket.php?id=<?php echo $ar['ticketId']; ?>">
+                                        <div class="d-flex align-items-start gap-3">
+                                            <div class="mt-1">
+                                                <i class="bi bi-exclamation-circle-fill text-warning fs-5"></i>
+                                            </div>
+                                            <div>
+                                                <div class="small fw-bold text-dark mb-1" style="line-height: 1.4; white-space: normal;">
+                                                    Action Required: Ticket #<?php echo $ar['ticketId']; ?> resolved! Please review and confirm completion.
+                                                </div>
+                                                <div class="text-secondary" style="font-size: 0.7rem;"><i class="bi bi-hourglass-split me-1"></i>Waiting for your confirmation</div>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </li>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
 
                         <?php if (count($notifications) > 0): ?>
                             <?php foreach ($notifications as $n): ?>
@@ -89,7 +116,7 @@ if (isset($_SESSION['user_id']) && isset($pdo)) {
                                     </a>
                                 </li>
                             <?php endforeach; ?>
-                        <?php else: ?>
+                        <?php elseif (count($actionRequired) == 0): ?>
                             <li>
                                 <div class="dropdown-item text-muted text-center py-4 small"><i class="bi bi-bell-slash fs-3 d-block mb-2 text-light"></i>No new notifications.</div>
                             </li>

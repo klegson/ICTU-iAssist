@@ -68,7 +68,7 @@ if (isset($_POST['ticket_action'])) {
         <div style="width: 280px; flex-shrink: 0;">
             <?php
             $page = 'dashboard';
-            include 'sidebar_tech.php';
+            include 'sidebar.php';
             ?>
         </div>
 

@@ -133,7 +133,7 @@ function isActive($pageName, $currentPage)
                 </li>
                 <li class="nav-item">
                     <a href="ticket_history.php" class="nav-link <?= isActive('ticket_history.php', $currentPage) ?>">
-                        <i class="bi bi-plus-circle me-3 fs-5 align-middle"></i> Ticket History
+                        <i class="bi bi-ticket-detailed me-3 fs-5 align-middle"></i> Ticket History
                     </a>
                 </li>
                 <li class="nav-item">
