@@ -3,7 +3,7 @@ session_start();
 require_once 'db.php';
 
 if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
+    header("Location: index.php");
     exit;
 }
 
@@ -13,7 +13,7 @@ $role = $_SESSION['role'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['complete_ticket'])) {
 
-    $updateStmt = $pdo->prepare("UPDATE ticket SET status = 'Completed' WHERE ticketId = ?");
+    $updateStmt = $pdo->prepare("UPDATE ticket SET status = 'Completed', completedAt = NOW() WHERE ticketId = ?");
     $updateStmt->execute([$ticketId]);
 
     $ratingFormUrl = "https://forms.office.com/pages/responsepage.aspx?id=gKvjQCQgo0W_dnoHYaJNKZVrGLcKRchGg0_5vlA39MhURDc2OU5GTENEVEw2WlJPU1JYSDRXWVZBVi4u&fbclid=IwY2xjawQ4BhJleHRuA2FlbQIxMQBzcnRjBmFwcF9pZAEwAAEedg_x-eXFRIhH_vGN-i5EcJPnnK3SJsm-pas3RiutNgoLpQXl3qs5X9SiMPo_aem_d4c3vnysQcAzOumLodpZcA";
@@ -21,11 +21,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['complete_ticket'])) {
     exit;
 }
 
-$sql = "SELECT t.*, u.firstName, u.lastName, u.email, d.departmentName, c.categoryName 
+$sql = "SELECT t.*, u.firstName, u.lastName, u.email, d.departmentName, c.categoryName,
+        tech.firstName AS techFirstName, tech.lastName AS techLastName
         FROM ticket t 
         JOIN users u ON t.userId = u.userId 
         LEFT JOIN department d ON u.departmentId = d.departmentId
         LEFT JOIN category c ON t.categoryId = c.categoryId 
+        LEFT JOIN users tech ON t.resolvedBy = tech.userId
         WHERE t.ticketId = ?";
 
 if ($role === 'User') {
@@ -43,7 +45,7 @@ if (!$ticket) {
     echo "<div style='text-align:center; margin-top:50px; font-family:sans-serif;'>
             <h3>Ticket not found</h3>
             <p>This ticket does not exist or you do not have permission to view it.</p>
-            <a href='db_user.php'>Return to Dashboard</a>
+            <a href='index.php'>Return to Dashboard</a>
           </div>";
     exit;
 }
@@ -74,7 +76,7 @@ if (!$ticket) {
                         <h2 class="fw-bold text-dark mb-0">Ticket #<?php echo htmlspecialchars($ticketId); ?></h2>
                         <div class="text-muted small mt-1">Created on <?php echo date("F d, Y \• h:i A", strtotime($ticket['createdAt'])); ?></div>
                     </div>
-                    <a href="db_user.php" class="btn btn-outline-secondary px-4 bg-white"><i class="bi bi-arrow-left me-2"></i>Back to Dashboard</a>
+                    <a href="ticket_history.php" class="btn btn-outline-secondary px-4 bg-white"><i class="bi bi-arrow-left me-2"></i>Back to Dashboard</a>
                 </div>
 
                 <div class="row g-4">
@@ -89,19 +91,19 @@ if (!$ticket) {
                             </div>
                         </div>
 
-                        <?php if (!empty($ticket['remarks']) || !empty($ticket['technician_signature'])): ?>
+                        <?php if (!empty($ticket['remarks'])): ?>
                             <div class="card border-0 shadow-sm rounded-4" style="border-top: 4px solid #198754 !important;">
                                 <div class="card-body p-4 p-md-5">
                                     <h6 class="fw-bold mb-4 text-success"><i class="bi bi-chat-dots-fill me-2"></i>Officer's Response</h6>
 
                                     <div class="p-4 border rounded-3 bg-white mb-3 text-dark" style="min-height: 100px;">
-                                        <?php echo !empty($ticket['remarks']) ? nl2br(htmlspecialchars($ticket['remarks'])) : "<span class='text-muted fst-italic'>Issue resolved by technician.</span>"; ?>
+                                        <?php echo nl2br(htmlspecialchars($ticket['remarks'])); ?>
                                     </div>
 
-                                    <?php if (!empty($ticket['technician_signature'])): ?>
+                                    <?php if ($ticket['resolvedAt']): ?>
                                         <div class="text-end mt-4">
-                                            <img src="<?php echo htmlspecialchars($ticket['technician_signature']); ?>" alt="Technician Signature" style="max-height: 80px; filter: contrast(1.2);">
-                                            <div class="small text-muted fst-italic mt-1">Officially signed off by ICT Support</div>
+                                            <div class="small text-muted fst-italic">Remarks posted on:</div>
+                                            <div class="fw-bold text-dark"><?php echo date("F d, Y \a\\t h:i A", strtotime($ticket['resolvedAt'])); ?></div>
                                         </div>
                                     <?php endif; ?>
 
@@ -130,12 +132,45 @@ if (!$ticket) {
                                 </div>
                             </div>
 
-                            <div class="mb-4">
-                                <label class="small text-muted fw-bold text-uppercase mb-2">Category</label>
-                                <div class="fw-bold text-dark fs-6"><?php echo htmlspecialchars($ticket['categoryName'] ?? 'Uncategorized'); ?></div>
-                            </div>
+                            <?php if (!empty($ticket['techFirstName'])): ?>
+                                <div class="mb-4">
+                                    <label class="small text-muted fw-bold text-uppercase mb-1">Resolved By</label>
+                                    <div class="fw-bold text-dark"><?php echo htmlspecialchars($ticket['techFirstName'] . ' ' . $ticket['techLastName']); ?></div>
+                                    <?php if ($ticket['resolvedAt']): ?>
+                                        <div class="small text-muted">At <?php echo date("M d, Y h:i A", strtotime($ticket['resolvedAt'])); ?></div>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
+
+                            <?php if ($ticket['resolvedAt']): ?>
+                                <div class="mb-4">
+                                    <label class="small text-muted fw-bold text-uppercase mb-1">Days Resolved</label>
+                                    <div class="text-dark fw-bold">
+                                        <?php
+                                        $created = new DateTime($ticket['createdAt']);
+                                        $resolved = new DateTime($ticket['resolvedAt']);
+                                        $diff = $created->diff($resolved);
+                                        echo $diff->days . " Day" . ($diff->days != 1 ? 's' : '');
+                                        ?>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+
+                            <?php if ($ticket['completedAt']): ?>
+                                <div class="mb-4">
+                                    <label class="small text-muted fw-bold text-uppercase mb-1">Confirmed Completed</label>
+                                    <div class="text-success fw-medium small">
+                                        <i class="bi bi-check-circle-fill me-1"></i> <?php echo date("M d, Y \a\\t h:i A", strtotime($ticket['completedAt'])); ?>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
 
                             <div class="mb-4">
+                                <label class="small text-muted fw-bold text-uppercase mb-2">Category</label>
+                                <div class="text-dark fs-6"><?php echo htmlspecialchars($ticket['categoryName'] ?? 'Uncategorized'); ?></div>
+                            </div>
+
+                            <div class="mb-2">
                                 <label class="small text-muted fw-bold text-uppercase mb-2">Requestor</label>
                                 <div class="text-dark"><?php echo htmlspecialchars($ticket['firstName'] . ' ' . $ticket['lastName']); ?></div>
                                 <div class="small text-muted"><?php echo htmlspecialchars($ticket['departmentName'] ?? 'No Department'); ?></div>

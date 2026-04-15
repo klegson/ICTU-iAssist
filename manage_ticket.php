@@ -10,12 +10,21 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Officer', 'Te
 $ticketId = $_GET['id'] ?? null;
 $message = '';
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_ticket'])) {
+    $assignedTo = $_POST['assigned_to'];
+
+    $updateStmt = $pdo->prepare("UPDATE ticket SET status = 'Processing', assignedTo = ? WHERE ticketId = ?");
+    if ($updateStmt->execute([$assignedTo, $ticketId])) {
+        header("Location: manage_ticket.php?id=" . $ticketId);
+        exit;
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['resolve_ticket'])) {
     $remarks = trim($_POST['remarks']);
 
-    $updateStmt = $pdo->prepare("UPDATE ticket SET status = 'Resolved', remarks = ? WHERE ticketId = ?");
-
-    if ($updateStmt->execute([$remarks, $ticketId])) {
+    $updateStmt = $pdo->prepare("UPDATE ticket SET status = 'Resolved', remarks = ?, resolvedBy = ?, resolvedAt = NOW() WHERE ticketId = ?");
+    if ($updateStmt->execute([$remarks, $_SESSION['user_id'], $ticketId])) {
         if ($_SESSION['role'] === 'Officer') {
             header("Location: db_officer.php");
         } else {
@@ -38,6 +47,9 @@ if (!$ticket) {
     echo "<div class='text-center mt-5'><h3>Ticket not found</h3></div>";
     exit;
 }
+
+$techStmt = $pdo->query("SELECT userId, firstName, lastName FROM users WHERE role IN ('Technician', 'Officer') AND isApproved = 1 ORDER BY firstName ASC");
+$technicians = $techStmt->fetchAll();
 ?>
 
 <!DOCTYPE html>
@@ -62,7 +74,7 @@ if (!$ticket) {
             <div class="container-fluid py-5 px-5">
 
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2 class="fw-bold text-dark mb-0">Processing Ticket #<?php echo htmlspecialchars($ticketId); ?></h2>
+                    <h2 class="fw-bold text-dark mb-0">Manage Ticket #<?php echo htmlspecialchars($ticketId); ?></h2>
                     <button onclick="history.back()" class="btn btn-outline-secondary px-4 bg-white">Back</button>
                 </div>
 
@@ -103,22 +115,77 @@ if (!$ticket) {
                             <div class="mb-4">
                                 <label class="small text-muted fw-bold mb-2">CURRENT STATUS</label>
                                 <div>
-                                    <span class="badge bg-primary fs-6 px-4 py-2 rounded-pill shadow-sm">
+                                    <?php
+                                    $badgeClass = match ($ticket['status']) {
+                                        'Pending' => 'bg-warning text-dark',
+                                        'Processing' => 'bg-primary',
+                                        'Resolved' => 'bg-success',
+                                        'Completed' => 'bg-success',
+                                        default => 'bg-secondary'
+                                    };
+                                    ?>
+                                    <span class="badge <?php echo $badgeClass; ?> fs-6 px-4 py-2 rounded-pill shadow-sm">
                                         <?php echo htmlspecialchars($ticket['status']); ?>
                                     </span>
                                 </div>
                             </div>
 
-                            <form method="POST">
+                            <?php if ($ticket['status'] === 'Pending'): ?>
+
+                                <form method="POST" class="mb-4 pb-4 border-bottom">
+                                    <div class="mb-3">
+                                        <label class="small text-muted fw-bold mb-2">ASSIGN TO IT PERSONNEL</label>
+                                        <select name="assigned_to" class="form-select bg-light" required>
+                                            <option value="" disabled selected>-- Select Technician --</option>
+                                            <?php foreach ($technicians as $tech): ?>
+                                                <option value="<?php echo $tech['userId']; ?>" <?php echo ($tech['userId'] == $_SESSION['user_id']) ? 'selected' : ''; ?>>
+                                                    <?php echo htmlspecialchars($tech['firstName'] . ' ' . $tech['lastName']); ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    <button type="submit" name="assign_ticket" class="btn btn-primary fw-bold w-100 py-2 shadow-sm rounded-3">
+                                        <i class="bi bi-person-gear me-2"></i> ASSIGN TICKET
+                                    </button>
+                                </form>
+
+                                <form method="POST">
+                                    <div class="mb-3">
+                                        <label class="small text-muted fw-bold mb-2">DIRECT RESOLVE (REMARKS)</label>
+                                        <textarea name="remarks" class="form-control bg-light" rows="3" placeholder="Enter resolution details..." required></textarea>
+                                    </div>
+                                    <button type="submit" name="resolve_ticket" class="btn btn-success fw-bold w-100 py-2 shadow-sm rounded-3">
+                                        <i class="bi bi-check-circle-fill me-2"></i> RESOLVE TICKET
+                                    </button>
+                                </form>
+
+                            <?php elseif ($ticket['status'] === 'Processing'): ?>
+
+                                <form method="POST">
+                                    <div class="mb-4">
+                                        <label class="small text-muted fw-bold mb-2">REMARKS / RESOLUTION NOTES</label>
+                                        <textarea name="remarks" class="form-control bg-light" rows="5" placeholder="Enter details of how the issue was resolved..." required><?php echo htmlspecialchars($ticket['remarks'] ?? ''); ?></textarea>
+                                    </div>
+                                    <button type="submit" name="resolve_ticket" class="btn btn-success fw-bold w-100 py-3 shadow-sm rounded-3">
+                                        <i class="bi bi-check-circle-fill me-2"></i> RESOLVE TICKET
+                                    </button>
+                                </form>
+
+                            <?php else: ?>
+
                                 <div class="mb-4">
-                                    <label class="small text-muted fw-bold mb-2">REMARKS</label>
-                                    <textarea name="remarks" class="form-control bg-light" rows="5" placeholder="Enter resolution details or notes here..." required><?php echo htmlspecialchars($ticket['remarks'] ?? ''); ?></textarea>
+                                    <label class="small text-muted fw-bold mb-2">RESOLUTION REMARKS</label>
+                                    <div class="p-3 bg-light rounded-3 border text-dark small">
+                                        <?php echo nl2br(htmlspecialchars($ticket['remarks'] ?? 'No remarks provided.')); ?>
+                                    </div>
+                                </div>
+                                <div class="alert alert-success text-center mb-0 border-0 shadow-sm py-3">
+                                    <i class="bi bi-check-circle-fill d-block fs-2 mb-2"></i>
+                                    <strong><?php echo $ticket['status']; ?></strong><br>
+                                    <small>This ticket is closed.</small>
                                 </div>
 
-                                <button type="submit" name="resolve_ticket" class="btn btn-success fw-bold w-100 py-3 shadow-sm rounded-3">
-                                    <i class="bi bi-check-circle-fill me-2"></i> RESOLVE TICKET
-                                </button>
-                            </form>
+                            <?php endif; ?>
 
                         </div>
                     </div>
