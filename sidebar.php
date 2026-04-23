@@ -9,6 +9,14 @@ $role = $_SESSION['role'] ?? 'User';
 
 $displayName = htmlspecialchars($_SESSION['fullname'] ?? 'User');
 
+$sidebarPic = null;
+if (isset($_SESSION['user_id'])) {
+    $picStmt = $pdo->prepare("SELECT profilePicture FROM users WHERE userId = ?");
+    $picStmt->execute([$_SESSION['user_id']]);
+    $picResult = $picStmt->fetch();
+    $sidebarPic = $picResult['profilePicture'] ?? null;
+}
+
 $currentPage = basename($_SERVER['PHP_SELF']);
 
 function isActive($pageName, $currentPage)
@@ -159,14 +167,18 @@ function isActive($pageName, $currentPage)
     <div class="border-top border-secondary border-opacity-25 mt-auto bg-dark bg-opacity-50 shadow-inner">
         <div class="p-3 d-flex align-items-center justify-content-between">
 
-            <div class="d-flex align-items-center gap-3">
-                <div class="rounded-circle border border-secondary border-opacity-75 d-flex align-items-center justify-content-center text-secondary bg-secondary bg-opacity-20 shadow-inner" style="width: 42px; height: 42px;">
-                    <i class="bi bi-person fs-5"></i>
-                </div>
-                <div class="fw-bold text-white fs-6" style="font-size: 0.95rem;">
+            <a href="profile.php" class="d-flex align-items-center gap-3 text-decoration-none">
+                <?php if ($sidebarPic && file_exists($sidebarPic)): ?>
+                    <img src="<?php echo htmlspecialchars($sidebarPic); ?>" alt="Profile" class="rounded-circle" style="width: 42px; height: 42px; object-fit: cover; border: 2px solid rgba(255,255,255,0.2);">
+                <?php else: ?>
+                    <div class="rounded-circle border border-secondary border-opacity-75 d-flex align-items-center justify-content-center text-secondary bg-secondary bg-opacity-20 shadow-inner" style="width: 42px; height: 42px;">
+                        <i class="bi bi-person fs-5"></i>
+                    </div>
+                <?php endif; ?>
+                <div class="fw-bold text-white fs-6 custom-hover px-2 py-1 rounded" style="font-size: 0.95rem;">
                     <?php echo $displayName; ?>
                 </div>
-            </div>
+            </a>
 
             <a href="logout.php" class="text-light opacity-75 custom-hover p-2 d-inline-block rounded-circle" title="Sign Out">
                 <i class="bi bi-box-arrow-left fs-5 align-middle"></i>
