@@ -14,6 +14,9 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'User') {
 $userId = $_SESSION['user_id'];
 $msg = "";
 
+$techStmt = $pdo->query("SELECT userId, firstName, lastName FROM users WHERE role = 'Technician' AND isApproved = 1 ORDER BY firstName ASC");
+$technicians = $techStmt->fetchAll();
+
 if (isset($_POST['submit_account'])) {
     $serviceType = $_POST['categoryId'];
     $reason = trim($_POST['reason']);
@@ -29,32 +32,37 @@ if (isset($_POST['submit_account'])) {
 
     $systemList = implode(", ", $systems);
 
-    $extraInfo = "";
-    if (!empty($_POST['transfer_to'])) {
-        $extraInfo = "\nTRANSFER TO: " . trim($_POST['transfer_to']);
-    }
-
-    $finalDescription = "REQUEST DETAILS:\n" .
-        "Systems: " . $systemList . "\n\n" .
-        "REASON/PURPOSE:\n" . $reason;
-
-    $deptStmt = $pdo->prepare("SELECT departmentId FROM users WHERE userId = ?");
-    $deptStmt->execute([$userId]);
-    $userDeptId = $deptStmt->fetchColumn();
-
-    if (!$userDeptId) {
-        $userDeptId = 1;
-    }
-
-    $stmt = $pdo->prepare("INSERT INTO ticket (subject, categoryId, description, priority, status, departmentId, userId) VALUES (?, ?, ?, ?, 'Pending', ?, ?)");
-
-    $subject = "Account Request (" . $systemList . ")";
-
-    if ($stmt->execute([$subject, $serviceType, $finalDescription, $priority, $_SESSION['department_id'], $userId])) {
-        header("Location: db_user.php?msg=success");
-        exit;
+    if (empty($systemList)) {
+        $msg = "Please select at least one system.";
     } else {
-        $msg = "Error submitting request.";
+        $extraInfo = "";
+        if (!empty($_POST['transfer_to'])) {
+            $extraInfo = "\nTRANSFER TO: " . trim($_POST['transfer_to']);
+        }
+
+        $finalDescription = "REQUEST DETAILS:\n" .
+            "Systems: " . $systemList . "\n\n" .
+            "REASON/PURPOSE:\n" . $reason;
+
+        $deptStmt = $pdo->prepare("SELECT departmentId FROM users WHERE userId = ?");
+        $deptStmt->execute([$userId]);
+        $userDeptId = $deptStmt->fetchColumn();
+
+        if (!$userDeptId) {
+            $userDeptId = 1;
+        }
+
+        $stmt = $pdo->prepare("INSERT INTO ticket (subject, categoryId, description, priority, status, departmentId, userId, assignedTo) VALUES (?, ?, ?, ?, 'Pending', ?, ?, ?)");
+
+        $subject = "Account Request (" . $systemList . ")";
+        $assignedTo = $_POST['technician_id'] ?? null;
+
+        if ($stmt->execute([$subject, $serviceType, $finalDescription, $priority, $_SESSION['department_id'], $userId, $assignedTo])) {
+            header("Location: db_user.php?msg=success");
+            exit;
+        } else {
+            $msg = "Error submitting request.";
+        }
     }
 }
 ?>
@@ -104,9 +112,16 @@ if (isset($_POST['submit_account'])) {
                                     ?>
                                 </select>
                             </div>
-                            <div class="col-md-6" id="transferBox" style="display: none;">
-                                <label class="form-label small fw-bold">TRANSFER TO</label>
-                                <input type="text" class="form-control" name="transfer_to" placeholder="Enter destination...">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">ASSIGN TO TECHNICIAN</label>
+                                <select class="form-select" name="technician_id">
+                                    <option value="" selected>Auto-assign (Officer reviews)</option>
+                                    <?php foreach ($technicians as $tech): ?>
+                                        <option value="<?php echo $tech['userId']; ?>">
+                                            <?php echo htmlspecialchars($tech['firstName'] . ' ' . $tech['lastName']); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
                             </div>
                         </div>
 

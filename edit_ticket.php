@@ -15,16 +15,15 @@ if (isset($_POST['update_ticket'])) {
     $ticketId = $_POST['ticketId'];
     $subject = $_POST['subject'];
     $description = $_POST['description'];
+    $categoryId = $_POST['categoryId'];
+    $manualCategory = trim($_POST['manual_category'] ?? '');
 
-    if (isset($_POST['is_manual']) && $_POST['is_manual'] === '1') {
-        $manualCategory = trim($_POST['manual_category']);
-        $description = "Custom Category Specified: " . $manualCategory . "\n\n" . $description;
+    $catStmt = $pdo->prepare("SELECT categoryType, categoryName FROM category WHERE categoryId = ?");
+    $catStmt->execute([$categoryId]);
+    $catInfo = $catStmt->fetch();
 
-        $fallbackStmt = $pdo->query("SELECT categoryId FROM category WHERE categoryType = 'Others' LIMIT 1");
-        $categoryId = $fallbackStmt->fetchColumn();
-        if (!$categoryId) $categoryId = 0;
-    } else {
-        $categoryId = $_POST['categoryId'];
+    if ($catInfo && $catInfo['categoryType'] === 'Others' && !empty($manualCategory)) {
+        $description = "Custom Category: " . $manualCategory . "\n\n" . $description;
     }
 
     $sql = "UPDATE ticket SET subject = ?, categoryId = ?, description = ?, updatedAt = NOW() 
@@ -99,47 +98,32 @@ if (isset($_GET['id'])) {
                                     <div class="col-md-6 mb-3 mb-md-0">
                                         <label class="form-label small fw-bold">CATEGORY</label>
 
-                                        <div id="dropdownContainer">
-                                            <select class="form-select" name="categoryId" id="categorySelect" required>
-                                                <option value="" disabled>Select a Category...</option>
-                                                <?php
-                                                $sql = "SELECT * FROM category 
-                                                        WHERE categoryType != 'Account Services' 
-                                                        ORDER BY FIELD(categoryType, 'Hardware Problems', 'Software Problems', 'Network Problems', 'Others'), categoryName";
-                                                $stmt = $pdo->query($sql);
-                                                $currentGroup = "";
+                                        <select class="form-select" name="categoryId" id="categorySelect" required>
+                                            <option value="" disabled>Select a Category...</option>
+                                            <?php
+                                            $sql = "SELECT * FROM category 
+                                                    WHERE categoryType != 'Account Services' 
+                                                    ORDER BY FIELD(categoryType, 'Hardware Problems', 'Software Problems', 'Network Problems', 'Others'), categoryName";
+                                            $stmt = $pdo->query($sql);
+                                            $currentGroup = "";
 
-                                                while ($cat = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                                                    if ($currentGroup !== $cat['categoryType']) {
-                                                        if ($currentGroup !== "") echo "</optgroup>";
-                                                        $currentGroup = $cat['categoryType'];
-                                                        echo "<optgroup label='" . htmlspecialchars($currentGroup) . "'>";
-                                                    }
-                                                    $selected = ($cat['categoryId'] == $ticket['categoryId']) ? 'selected' : '';
-                                                    echo "<option value='{$cat['categoryId']}' $selected>" . htmlspecialchars($cat['categoryName']) . "</option>";
+                                            while ($cat = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                                                if ($currentGroup !== $cat['categoryType']) {
+                                                    if ($currentGroup !== "") echo "</optgroup>";
+                                                    $currentGroup = $cat['categoryType'];
+                                                    echo "<optgroup label='" . htmlspecialchars($currentGroup) . "'>";
                                                 }
-                                                if ($currentGroup !== "") echo "</optgroup>";
-                                                ?>
-                                            </select>
+                                                $selected = ($cat['categoryId'] == $ticket['categoryId']) ? 'selected' : '';
+                                                echo "<option value='{$cat['categoryId']}' $selected>" . htmlspecialchars($cat['categoryName']) . "</option>";
+                                            }
+                                            if ($currentGroup !== "") echo "</optgroup>";
+                                            ?>
+                                        </select>
 
-                                            <div class="mt-2 text-end">
-                                                <a href="#" id="showManualBtn" class="small text-decoration-none text-primary fw-bold">
-                                                    <i class="bi bi-pencil-square me-1"></i>Can't find your issue? Type it manually.
-                                                </a>
-                                            </div>
+                                        <div id="manualContainer" style="display: none;" class="mt-3">
+                                            <label class="form-label small fw-bold">SPECIFY CATEGORY</label>
+                                            <input type="text" class="form-control" name="manual_category" id="manualCategoryInput" placeholder="Type your custom category...">
                                         </div>
-
-                                        <div id="manualContainer" style="display: none;">
-                                            <input type="text" class="form-control border-primary shadow-sm" name="manual_category" id="manualCategoryInput" placeholder="Please specify your category...">
-
-                                            <div class="mt-2 text-end">
-                                                <a href="#" id="showDropdownBtn" class="small text-decoration-none text-secondary fw-bold">
-                                                    <i class="bi bi-list-ul me-1"></i>Back to category list
-                                                </a>
-                                            </div>
-                                        </div>
-
-                                        <input type="hidden" name="is_manual" id="isManualFlag" value="0">
                                     </div>
                                 </div>
 
@@ -169,36 +153,37 @@ if (isset($_GET['id'])) {
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const dropdownContainer = document.getElementById('dropdownContainer');
             const categorySelect = document.getElementById('categorySelect');
-
             const manualContainer = document.getElementById('manualContainer');
             const manualCategoryInput = document.getElementById('manualCategoryInput');
 
-            const isManualFlag = document.getElementById('isManualFlag');
+            function checkInitialCategory() {
+                const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+                const optgroup = selectedOption.closest('optgroup');
+                const groupLabel = optgroup ? optgroup.label : '';
 
-            document.getElementById('showManualBtn').addEventListener('click', function(e) {
-                e.preventDefault();
-                dropdownContainer.style.display = 'none';
-                categorySelect.removeAttribute('required');
+                if (groupLabel === 'Others') {
+                    manualContainer.style.display = 'block';
+                    manualCategoryInput.setAttribute('required', 'required');
+                }
+            }
 
-                manualContainer.style.display = 'block';
-                manualCategoryInput.setAttribute('required', 'required');
-                manualCategoryInput.focus();
+            checkInitialCategory();
 
-                isManualFlag.value = '1';
-            });
+            categorySelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                const optgroup = selectedOption.closest('optgroup');
+                const groupLabel = optgroup ? optgroup.label : '';
 
-            document.getElementById('showDropdownBtn').addEventListener('click', function(e) {
-                e.preventDefault();
-                manualContainer.style.display = 'none';
-                manualCategoryInput.removeAttribute('required');
-                manualCategoryInput.value = '';
-
-                dropdownContainer.style.display = 'block';
-                categorySelect.setAttribute('required', 'required');
-
-                isManualFlag.value = '0';
+                if (groupLabel === 'Others') {
+                    manualContainer.style.display = 'block';
+                    manualCategoryInput.setAttribute('required', 'required');
+                    manualCategoryInput.focus();
+                } else {
+                    manualContainer.style.display = 'none';
+                    manualCategoryInput.removeAttribute('required');
+                    manualCategoryInput.value = '';
+                }
             });
         });
     </script>

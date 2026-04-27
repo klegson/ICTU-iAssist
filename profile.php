@@ -11,7 +11,7 @@ $userId = $_SESSION['user_id'];
 $successMessage = '';
 $errorMessage = '';
 
-$sql = "SELECT u.*, d.departmentName 
+$sql = "SELECT u.*, d.departmentName, d.departmentCode 
         FROM users u 
         LEFT JOIN department d ON u.departmentId = d.departmentId 
         WHERE u.userId = ?";
@@ -202,7 +202,7 @@ $page = 'profile';
                                                 ?> mb-3">
                                 <?php echo htmlspecialchars($user['role']); ?>
                             </span>
-                            <p class="text-muted mb-1"><i class="bi bi-building me-2"></i><?php echo htmlspecialchars($user['departmentName'] ?? 'N/A'); ?></p>
+                            <p class="text-muted mb-1"><i class="bi bi-building me-2"></i><?php echo htmlspecialchars(($user['departmentName'] ?? 'N/A') . ' (' . ($user['departmentCode'] ?? 'N/A') . ')'); ?></p>
                             <p class="text-muted mb-0"><i class="bi bi-calendar3 me-2"></i>Joined <?php echo date("F Y", strtotime($user['createdAt'])); ?></p>
                         </div>
                     </div>
@@ -315,7 +315,7 @@ $page = 'profile';
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Department</label>
-                                    <input type="text" class="form-control" value="<?php echo htmlspecialchars($user['departmentName'] ?? 'N/A'); ?>" readonly>
+                                    <input type="text" class="form-control" value="<?php echo htmlspecialchars(($user['departmentName'] ?? 'N/A') . ' (' . ($user['departmentCode'] ?? 'N/A') . ')'); ?>" readonly>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Phone Number</label>

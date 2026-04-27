@@ -105,7 +105,7 @@ if (isset($_POST['ticket_action'])) {
                                         JOIN users u ON t.userId = u.userId
                                         LEFT JOIN department d ON u.departmentId = d.departmentId
                                         LEFT JOIN category c ON t.categoryId = c.categoryId
-                                        WHERE t.assignedTo = ? AND t.status NOT IN ('Completed', 'Resolved')
+                                        WHERE t.assignedTo = ? AND t.status = 'Pending'
                                         AND (c.categoryType != 'Account Services' OR c.categoryType IS NULL)
                                         ORDER BY 
                                             CASE t.priority WHEN 'High' THEN 1 WHEN 'Medium' THEN 2 WHEN 'Low' THEN 3 ELSE 4 END ASC, 
@@ -188,7 +188,7 @@ if (isset($_POST['ticket_action'])) {
                                         JOIN users u ON t.userId = u.userId
                                         LEFT JOIN department d ON u.departmentId = d.departmentId
                                         LEFT JOIN category c ON t.categoryId = c.categoryId
-                                        WHERE t.assignedTo = ? AND t.status NOT IN ('Completed', 'Resolved')
+                                        WHERE t.assignedTo = ? AND t.status = 'Pending'
                                         AND c.categoryType = 'Account Services'
                                         ORDER BY 
                                             CASE t.priority WHEN 'High' THEN 1 WHEN 'Medium' THEN 2 WHEN 'Low' THEN 3 ELSE 4 END ASC, 

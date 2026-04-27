@@ -17,8 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['complete_ticket'])) {
     $updateStmt->execute([$ticketId]);
 
     $ratingFormUrl = "https://forms.office.com/pages/responsepage.aspx?id=gKvjQCQgo0W_dnoHYaJNKZVrGLcKRchGg0_5vlA39MhURDc2OU5GTENEVEw2WlJPU1JYSDRXWVZBVi4u&fbclid=IwY2xjawQ4BhJleHRuA2FlbQIxMQBzcnRjBmFwcF9pZAEwAAEedg_x-eXFRIhH_vGN-i5EcJPnnK3SJsm-pas3RiutNgoLpQXl3qs5X9SiMPo_aem_d4c3vnysQcAzOumLodpZcA";
-    header("Location: " . $ratingFormUrl);
-    exit;
+    $showSurveyModal = true;
 }
 
 $sql = "SELECT t.*, u.firstName, u.lastName, u.email, d.departmentName, c.categoryName,
@@ -200,6 +199,36 @@ if (!$ticket) {
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <?php if (isset($showSurveyModal) && $showSurveyModal): ?>
+    <div class="modal fade" id="surveyModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" show">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-dark"><i class="bi bi-check-circle-fill text-success me-2"></i>Ticket Completed!</h5>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <p class="text-muted mb-3">Your ticket has been marked as completed. Please take a moment to rate our service.</p>
+                    <div class="mb-4">
+                        <a href="<?php echo htmlspecialchars($ratingFormUrl); ?>" target="_blank" class="btn btn-success fw-bold px-5 py-2 rounded-3">
+                            <i class="bi bi-star-fill me-2"></i>Rate Service
+                        </a>
+                    </div>
+                    <a href="index.php" class="btn btn-outline-secondary px-4">
+                        Return to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var modal = new bootstrap.Modal(document.getElementById('surveyModal'));
+            modal.show();
+        });
+    </script>
+    <?php endif; ?>
+
 </body>
 
 </html>

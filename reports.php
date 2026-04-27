@@ -128,7 +128,7 @@ $yearLabel = ($selectedYear === 'all') ? 'All Years' : $selectedYear;
 <body class="bg-light">
 
     <div style="position: fixed; top: 0; left: 0; height: 100vh; width: 280px; z-index: 1000; overflow-y: auto;">
-        <?php include 'sidebar_officer.php'; ?>
+        <?php include 'sidebar.php'; ?>
     </div>
 
     <div style="margin-left: 280px;">

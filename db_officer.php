@@ -106,16 +106,19 @@ function formatTimeAgo($datetime)
                                     <th class="text-muted small fw-bold pb-3">DATE REQUESTED</th>
                                     <th class="text-muted small fw-bold pb-3">REQUEST TYPE</th>
                                     <th class="text-muted small fw-bold pb-3">REQUESTOR</th>
+                                    <th class="text-muted small fw-bold pb-3">ASSIGNED TO</th>
                                     <th class="text-end text-muted small fw-bold pb-3">ACTION</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php
-                                $sql = "SELECT t.*, u.firstName, u.lastName, d.departmentName, c.categoryName
+                                $sql = "SELECT t.*, u.firstName, u.lastName, d.departmentName, c.categoryName,
+                                        CONCAT(t2.firstName, ' ', t2.lastName) as technicianName
                                         FROM ticket t 
                                         JOIN users u ON t.userId = u.userId
-                                        LEFT JOIN department d ON t.departmentId = d.departmentId
-                                        JOIN category c ON t.categoryId = c.categoryId
+                                        LEFT JOIN department d ON u.departmentId = d.departmentId
+                                        LEFT JOIN category c ON t.categoryId = c.categoryId
+                                        LEFT JOIN users t2 ON t.assignedTo = t2.userId
                                         WHERE t.status = 'Pending' AND c.categoryType = 'Account Services'
                                         ORDER BY t.createdAt ASC";
 
@@ -141,6 +144,7 @@ function formatTimeAgo($datetime)
                                                 <span class='d-block text-dark fw-bold'>" . $name . "</span>
                                                 <small class='text-muted'>" . $dept . "</small>
                                               </td>";
+                                        echo "<td class='py-3'><span class='badge bg-light text-dark border'>" . htmlspecialchars($row['technicianName'] ?? 'Pending Review') . "</span></td>";
                                         echo "<td class='py-3 text-end'>
                                                 <a href='manage_ticket.php?id=" . $row['ticketId'] . "' class='btn btn-sm btn-deped-primary'>
                                                     Review <i class='bi bi-arrow-right ms-1'></i>
@@ -149,7 +153,7 @@ function formatTimeAgo($datetime)
                                         echo "</tr>";
                                     }
                                 } else {
-                                    echo "<tr><td colspan='5' class='text-center py-4 text-muted'>No pending account requests.</td></tr>";
+                                    echo "<tr><td colspan='6' class='text-center py-4 text-muted'>No pending account requests.</td></tr>";
                                 }
                                 ?>
                             </tbody>
@@ -180,7 +184,7 @@ function formatTimeAgo($datetime)
                                 $sql = "SELECT t.*, u.firstName, u.lastName, d.departmentName, c.categoryName
                                         FROM ticket t 
                                         JOIN users u ON t.userId = u.userId 
-                                        LEFT JOIN department d ON t.departmentId = d.departmentId 
+                                        LEFT JOIN department d ON u.departmentId = d.departmentId 
                                         LEFT JOIN category c ON t.categoryId = c.categoryId
                                         WHERE t.status = 'Pending' AND (c.categoryType != 'Account Services' OR c.categoryType IS NULL)
                                         ORDER BY t.createdAt ASC";
