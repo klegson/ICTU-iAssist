@@ -10,11 +10,13 @@ $role = $_SESSION['role'] ?? 'User';
 $displayName = htmlspecialchars($_SESSION['fullname'] ?? 'User');
 
 $sidebarPic = null;
+$sidebarPosition = null;
 if (isset($_SESSION['user_id'])) {
-    $picStmt = $pdo->prepare("SELECT profilePicture FROM users WHERE userId = ?");
+    $picStmt = $pdo->prepare("SELECT u.profilePicture, p.positionTitle FROM users u LEFT JOIN position p ON u.positionID = p.positionID WHERE u.userId = ?");
     $picStmt->execute([$_SESSION['user_id']]);
     $picResult = $picStmt->fetch();
     $sidebarPic = $picResult['profilePicture'] ?? null;
+    $sidebarPosition = $picResult['positionTitle'] ?? null;
 }
 
 $currentPage = basename($_SERVER['PHP_SELF']);
@@ -77,7 +79,7 @@ function isActive($pageName, $currentPage)
             if ($role === 'Officer') echo 'ICT Officer';
             elseif ($role === 'Technician') echo 'ICT Technician';
             else echo 'Staff / User';
-            ?>
+            ?><?php if ($sidebarPosition): ?> - <?php echo htmlspecialchars($sidebarPosition); ?><?php endif; ?>
         </span>
     </div>
 

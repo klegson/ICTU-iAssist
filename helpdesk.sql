@@ -10,6 +10,15 @@
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+00:00";
+SET FOREIGN_KEY_CHECKS=0;
+
+DROP TABLE IF EXISTS `ticket`;
+DROP TABLE IF EXISTS `notification`;
+DROP TABLE IF EXISTS `starlink`;
+DROP TABLE IF EXISTS `users`;
+DROP TABLE IF EXISTS `department`;
+DROP TABLE IF EXISTS `position`;
+DROP TABLE IF EXISTS `category`;
 
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -27,6 +36,7 @@ SET time_zone = "+00:00";
 -- Table structure for table `category`
 --
 
+DROP TABLE IF EXISTS `category`;
 CREATE TABLE `category` (
   `categoryId` int NOT NULL,
   `categoryName` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
@@ -65,41 +75,315 @@ CREATE TABLE `department` (
   `departmentCode` text CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
   `departmentName` text NOT NULL,
   `section_unit` text NOT NULL,
-  `departmentHead` text NOT NULL
+  `departmentHead` text NOT NULL,
+  `positionID` int DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
 -- Dumping data for table `department`
 --
 
-INSERT INTO `department` (`departmentId`, `departmentCode`, `departmentName`, `section_unit`, `departmentHead`) VALUES
-(1, 'AD-AMS', 'Administrative Division', 'Asset Management Section', '4217547'),
-(2, 'AD-GSU', 'Administrative Division', 'General Services Unit', '4821305'),
-(3, 'AD-PSU', 'Administrative Division', 'Payroll Services Unit', '4217547'),
-(4, 'AD-RECORDS', 'Administrative Division', 'Records Section', '4821344'),
-(5, 'AD-PERSONNEL', 'Administrative Division', 'Personnel Section', '4821307'),
-(6, 'AD-CASH', 'Administrative Division', 'Cash Section', '4821330'),
-(7, 'AD', 'Administrative Division', '', '4821278'),
-(8, 'CLMD-LRMS', 'Curriculum and Learning Management Division', 'Learning Resource Management Section', '4821265'),
-(9, 'CLMD', 'Curriculum and Learning Management Division', '', '4821265'),
-(10, 'ESSD-HN', 'Education Support Services Division', 'Health and Nutrition', '4821259'),
-(11, 'ESSD-PP', 'Education Support Services Division', 'Programs and Projects', '4821259'),
-(12, 'ESSD-FAC', 'Education Support Services Division', 'Facilities', '4821259'),
-(13, 'ESSD', 'Education Support Services Division', '', '4821259'),
-(14, 'FTAD', 'Field Technical Assistance Division', '', '4821278'),
-(15, 'FD-BUDGET', 'Finance Division', 'Budget Section', '4821345'),
-(16, 'FD-ACCOUNTING', 'Finance Division', 'Accounting Section', '4821335'),
-(17, 'FD', 'Finance Division', '', '4821346'),
-(18, 'HRDD', 'Human Resource Development Division', '', '4821290'),
-(19, 'HRDD-NEAP', 'Human Resource Development Division', 'NEAP', '4821290'),
-(20, 'ARD', 'Office of the Assistant Regional Director', '', '5007850'),
-(21, 'ORD-PROCUREMENT', 'Office of the Regional Director', 'Procurement Unit', '5812149'),
-(22, 'ORD-ICT', 'Office of the Regional Director', 'Information and Communications Technology Unit', '4821247'),
-(23, 'ORD-PAU', 'Office of the Regional Director', 'Public Affairs Unit', '6313713'),
-(24, 'ORD-LEGAL', 'Office of the Regional Director', 'Legal Unit', '4819118'),
-(25, 'ORD', 'Office of the Regional Director', '', '4510336'),
-(26, 'PPRD', 'Policy Planning and Research Division', '', '4821294'),
-(27, 'QAD', 'Quality Assurance Division', '', '4821284');
+INSERT INTO `department` (`departmentId`, `departmentCode`, `departmentName`, `section_unit`, `departmentHead`, `positionID`) VALUES
+(1, 'AD-AMS', 'Administrative Division', 'Asset Management Section', '4217547', NULL),
+(2, 'AD-GSU', 'Administrative Division', 'General Services Unit', '4821305', NULL),
+(3, 'AD-PSU', 'Administrative Division', 'Payroll Services Unit', '4217547', NULL),
+(4, 'AD-RECORDS', 'Administrative Division', 'Records Section', '4821344', NULL),
+(5, 'AD-PERSONNEL', 'Administrative Division', 'Personnel Section', '4821307', NULL),
+(6, 'AD-CASH', 'Administrative Division', 'Cash Section', '4821330', NULL),
+(7, 'AD', 'Administrative Division', '', '4821278', NULL),
+(8, 'CLMD-LRMS', 'Curriculum and Learning Management Division', 'Learning Resource Management Section', '4821265', NULL),
+(9, 'CLMD', 'Curriculum and Learning Management Division', '', '4821265', NULL),
+(10, 'ESSD-HN', 'Education Support Services Division', 'Health and Nutrition', '4821259', NULL),
+(11, 'ESSD-PP', 'Education Support Services Division', 'Programs and Projects', '4821259', NULL),
+(12, 'ESSD-FAC', 'Education Support Services Division', 'Facilities', '4821259', NULL),
+(13, 'ESSD', 'Education Support Services Division', '', '4821259', NULL),
+(14, 'FTAD', 'Field Technical Assistance Division', '', '4821278', NULL),
+(15, 'FD-BUDGET', 'Finance Division', 'Budget Section', '4821345', NULL),
+(16, 'FD-ACCOUNTING', 'Finance Division', 'Accounting Section', '4821335', NULL),
+(17, 'FD', 'Finance Division', '', '4821346', NULL),
+(18, 'HRDD', 'Human Resource Development Division', '', '4821290', NULL),
+(19, 'HRDD-NEAP', 'Human Resource Development Division', 'NEAP', '4821290', NULL),
+(20, 'ARD', 'Office of the Assistant Regional Director', '', '5007850', NULL),
+(21, 'ORD-PROCUREMENT', 'Office of the Regional Director', 'Procurement Unit', '5812149', NULL),
+(22, 'ORD-ICT', 'Office of the Regional Director', 'Information and Communications Technology Unit', '4821247', NULL),
+(23, 'ORD-PAU', 'Office of the Regional Director', 'Public Affairs Unit', '6313713', NULL),
+(24, 'ORD-LEGAL', 'Office of the Regional Director', 'Legal Unit', '4819118', NULL),
+(25, 'ORD', 'Office of the Regional Director', '', '4510336', NULL),
+(26, 'PPRD', 'Policy Planning and Research Division', '', '4821294', NULL),
+(27, 'QAD', 'Quality Assurance Division', '', '4821284', NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `position`
+--
+
+CREATE TABLE `position` (
+  `positionID` int NOT NULL,
+  `positionTitle` varchar(100) COLLATE utf8mb4_general_ci NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `position`
+--
+
+INSERT INTO `position` (`positionID`, `positionTitle`) VALUES
+(1, 'Accountant I'),
+(2, 'Accountant II'),
+(3, 'Accountant III'),
+(4, 'Accountant IV'),
+(5, 'Accounting  Analyst'),
+(6, 'Accounting Clerk II'),
+(7, 'Administrative  Assistant VI'),
+(8, 'Administrative Aide I'),
+(9, 'Administrative Aide II'),
+(10, 'Administrative Aide III'),
+(11, 'Administrative Aide IV'),
+(12, 'Administrative Aide V'),
+(13, 'Administrative Aide VI'),
+(14, 'Administrative Assistant I'),
+(15, 'Administrative Assistant II'),
+(16, 'Administrative assistant III'),
+(17, 'Administrative Assistant V'),
+(18, 'Administrative Officer I'),
+(19, 'Administrative Officer II'),
+(20, 'Administrative Officer III'),
+(21, 'Administrative Officer IV'),
+(22, 'Administrative Officer V'),
+(23, 'Agriculturist I'),
+(24, 'Agriculturist II'),
+(25, 'Aquacultural Technician II'),
+(26, 'Aquaculturist I'),
+(27, 'Architect II'),
+(28, 'Architect III'),
+(29, 'Artist-Illustrator II'),
+(30, 'Assistant Regional Director'),
+(31, 'Assistant Schools Division Superintendent'),
+(32, 'Assistant School Principal 1'),
+(33, 'Assistant School Principal II'),
+(34, 'Assistant School Principal III'),
+(35, 'Assistant Secretary'),
+(36, 'Assistant Special School Principal'),
+(37, 'Assistant Teacher\'s Camp Superintendent'),
+(38, 'Attorney  V'),
+(39, 'Attorney I'),
+(40, 'Attorney II'),
+(41, 'Attorney III'),
+(42, 'Attorney IV'),
+(43, 'Bookkeeper'),
+(44, 'Budget Officer I'),
+(45, 'Bureau Director III'),
+(46, 'Bureau Director IV'),
+(47, 'Cashier I'),
+(48, 'Cashier II'),
+(49, 'Chief Accountant '),
+(50, 'Chief Administrative Officer'),
+(51, 'Chief Education Supervisor'),
+(52, 'Chief Education Supervisor'),
+(53, 'Chief Health Program Officer'),
+(54, 'Cinematographer I'),
+(55, 'Clerk II'),
+(56, 'Clerk II'),
+(57, 'Clerk III'),
+(58, 'College Librarian I'),
+(59, 'College Librarian II'),
+(60, 'Communications Equipment Operator I'),
+(61, 'Communications Equipment Operator II'),
+(62, 'Communications Equipment Operator III'),
+(63, 'Communications Equipment Operator IV'),
+(64, 'Computer File Librarian II'),
+(65, 'Computer File Librarian II'),
+(66, 'Computer Maintenance Technologist I'),
+(67, 'Computer Maintenance Technologist III'),
+(68, 'Computer Programmer II'),
+(69, 'Computer Programmer III'),
+(70, 'Construction and Maintenance Man'),
+(71, 'Cook I'),
+(72, 'Copy Reader'),
+(73, 'Coxswain'),
+(74, 'Crafts Education Demonstrator I'),
+(75, 'Crafts Education Demonstrator II'),
+(76, 'Creative Arts Specialist I'),
+(77, 'Creative Arts Specialist II'),
+(78, 'Dental Aide'),
+(79, 'Dentist I'),
+(80, 'Dentist II'),
+(81, 'Dentist III'),
+(82, 'Department Legislative Liason Specialist'),
+(83, 'Disbursing Officer I'),
+(84, 'Disbursing Officer II'),
+(85, 'Dormitory Manager I'),
+(86, 'Dormitory Manager II'),
+(87, 'Draftsman I'),
+(88, 'Draftsman II'),
+(89, 'Driver I'),
+(90, 'Education Program Specialist I'),
+(91, 'Education Program Specialist II'),
+(92, 'Education Program Supervisor'),
+(93, 'Education Research Assistant II'),
+(94, 'Electronics and Communications Equipment Technician I'),
+(95, 'Engineer II'),
+(96, 'Engineer III'),
+(97, 'Engineer IV'),
+(98, 'Engineer V'),
+(99, 'Farm Worker I'),
+(100, 'Fiscal Clerk I'),
+(101, 'Fiscal Examiner I'),
+(102, 'Fisherman'),
+(103, 'Guesthouse Caretaker'),
+(104, 'Guidance Coordinator 1'),
+(105, 'Guidance Coordinator II'),
+(106, 'Guidance Coordinator III'),
+(107, 'Guidance Counselor I'),
+(108, 'Guidance Counselor II'),
+(109, 'Guidance Counselor III'),
+(110, 'Guidance Services Specialist I'),
+(111, 'Guidance Services Specialist II'),
+(112, 'Handicraft Worker I'),
+(113, 'Handicraft Worker II'),
+(114, 'Head Teacher I'),
+(115, 'Head Teacher II'),
+(116, 'Head Teacher III'),
+(117, 'Head Teacher IV'),
+(118, 'Head Teacher V'),
+(119, 'Head Teacher VI'),
+(120, 'Health Education and Promotion Officer II'),
+(121, 'Health Education and Promotion Officer III'),
+(122, 'Heavy Equipment Operator I'),
+(123, 'Houseparent I'),
+(124, 'Human Resource Management  Officer II'),
+(125, 'Human Resource Management Officer I'),
+(126, 'Information Systems Analyst II'),
+(127, 'Information Systems Analyst III'),
+(128, 'Information Systems Researcher III'),
+(129, 'Information Technology Officer'),
+(130, 'Information Technology Officer I'),
+(131, 'Information Technology Officer II'),
+(132, 'Internal Auditing Assistant '),
+(133, 'Internal Auditor I'),
+(134, 'Internal Auditor II'),
+(135, 'Internal Auditor III'),
+(136, 'Internal Auditor IV'),
+(137, 'Internal Auditor V'),
+(138, 'Laboratory Technician I'),
+(139, 'Legal Aide '),
+(140, 'Legal Assistant I'),
+(141, 'Legal Assistant II'),
+(142, 'Librarian I'),
+(143, 'Librarian II'),
+(144, 'Librarian III'),
+(145, 'Light Equipment Operator '),
+(146, 'Lineman I'),
+(147, 'Marine Engineman I'),
+(148, 'Master Fisherman '),
+(149, 'Master Teacher I'),
+(150, 'Master Teacher II'),
+(151, 'Master Teacher III'),
+(152, 'Master Teacher IV'),
+(153, 'Mechanic I'),
+(154, 'Mechanic II'),
+(155, 'Mechanical Plant Operator  II'),
+(156, 'Mechanical Plant Operator I'),
+(157, 'Medical Officer II'),
+(158, 'Medical Officer III'),
+(159, 'Medical Officer IV'),
+(160, 'Metal Worker I'),
+(161, 'Nurse I'),
+(162, 'Nurse II'),
+(163, 'Nurse Maid I'),
+(164, 'Nursing Attendant I'),
+(165, 'Nutritionist-Dietitian I'),
+(166, 'Nutritionist-Dietitian II'),
+(167, 'Nutritionist-Dietitian III'),
+(168, 'Photoengraver II'),
+(169, 'Planning Officer I'),
+(170, 'Planning Officer II'),
+(171, 'Planning Officer III'),
+(172, 'Planning Officer IV'),
+(173, 'Planning Officer V'),
+(174, 'Printing Foreman'),
+(175, 'Project Development Assistant '),
+(176, 'Project Development Officer I'),
+(177, 'Project Development Officer II'),
+(178, 'Project Development Officer III'),
+(179, 'Project Development Officer IV'),
+(180, 'Project Development Officer V'),
+(181, 'Project Evaluation Officer IV'),
+(182, 'Proofreader II'),
+(183, 'Public Schools District Supervisor'),
+(184, 'Publication Production Supervisor '),
+(185, 'Pyschologist I'),
+(186, 'Records Officer II'),
+(187, 'Regional Director'),
+(188, 'Registrar I'),
+(189, 'Registrar II'),
+(190, 'Reproduction Machine Operator I'),
+(191, 'School Farm Demonstrator'),
+(192, 'School Farming Coordinator I'),
+(193, 'School Farming Coordinator II'),
+(194, 'School Farming Coordinator III'),
+(195, 'School Librarian I'),
+(196, 'School Librarian II'),
+(197, 'School Librarian III'),
+(198, 'School Principal I'),
+(199, 'School Principal II'),
+(200, 'School Principal III'),
+(201, 'School Principal IV'),
+(202, 'Schools Division Superintendent'),
+(203, 'Science Research Assistant '),
+(204, 'Science Research Specialist II'),
+(205, 'Science Research Technician I'),
+(206, 'Science Research Technician II'),
+(207, 'Science Research Technician III'),
+(208, 'Science Research Technician IV'),
+(209, 'Secretary'),
+(210, 'Security Guard I'),
+(211, 'Security Guard II'),
+(212, 'Security Guard III'),
+(213, 'Security Officer II'),
+(214, 'Security Officer IV'),
+(215, 'Senior Administrative Assistant I'),
+(216, 'Senior Administrative Assistant II'),
+(217, 'Senior Administrative Assistant III'),
+(218, 'Senior Administrative Assistant V'),
+(219, 'Senior Bookkeeper'),
+(220, 'Senior Education Program Specialist'),
+(221, 'Senior Science Research Specialist'),
+(222, 'Social Welfare Officer I'),
+(223, 'Special Investigator III'),
+(224, 'Special Invetigator II'),
+(225, 'Special School Principal I'),
+(226, 'Special School Principal II'),
+(227, 'Statistician Aide'),
+(228, 'Statistician I'),
+(229, 'Statistician II'),
+(230, 'Statistician III'),
+(231, 'Supervising Administrative Officer'),
+(232, 'Supervising Education Program Specialist'),
+(233, 'Supervising Health Program Officer'),
+(234, 'Supply Officer I'),
+(235, 'Supply Officer II'),
+(236, 'Teacher Credentials Evaluator I'),
+(237, 'Teacher Credentials Evaluator  II'),
+(238, 'Teacher I'),
+(239, 'Teacher II'),
+(240, 'Teacher III'),
+(241, 'Teacher\'s Camp Superintendent'),
+(242, 'Teaching-Aids Specialist'),
+(243, 'Telegram Carrier'),
+(244, 'Typesetter II'),
+(245, 'Undersecretary'),
+(246, 'Utility Foreman'),
+(247, 'Utility Worker I'),
+(248, 'Vocational Instruction Supervisor I'),
+(249, 'Vocational Instruction Supervisor II'),
+(250, 'Vocational Instruction Supervisor III'),
+(251, 'Vocational Placement Coordinator I'),
+(252, 'Vocational School Administrator I'),
+(253, 'Vocational School Administrator II'),
+(254, 'Warehouseman III'),
+(255, 'Watchman I'),
+(256, 'Watchman II');
 
 -- --------------------------------------------------------
 
@@ -190,12 +474,14 @@ CREATE TABLE `users` (
   `employeeId` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `email` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
   `role` enum('User','Officer','Technician') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `position` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `positionID` int DEFAULT NULL,
   `password` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
   `firstName` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
   `middleName` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `lastName` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
   `suffix` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `phone` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `profilePicture` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `departmentId` int NOT NULL,
   `divisionId` int DEFAULT NULL,
   `createdAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
@@ -212,10 +498,10 @@ CREATE TABLE `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`userId`, `employeeId`, `email`, `role`, `position`, `password`, `firstName`, `middleName`, `lastName`, `suffix`, `departmentId`, `divisionId`, `createdAt`, `signature`, `isActive`, `activationToken`, `tokenExpiresAt`, `isApproved`, `googleId`, `avatarUrl`) VALUES
-(1, NULL, 'employee@deped.gov.ph', 'User', NULL, '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Gabriel', NULL, 'Reyes', NULL, 1, NULL, '2026-02-12 07:34:33', 'data:image/png;base64,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', 1, NULL, NULL, 1, NULL, NULL),
-(2, NULL, 'boss@deped.gov.ph', 'Officer', NULL, '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Carl', NULL, 'Dolino', NULL, 2, NULL, '2026-02-12 07:34:33', NULL, 1, NULL, NULL, 1, NULL, NULL),
-(3, NULL, 'tech@deped.gov.ph', 'Technician', NULL, '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Bill', NULL, 'Variacion', NULL, 4, NULL, '2026-02-12 07:34:33', NULL, 1, NULL, NULL, 1, NULL, NULL);
+INSERT INTO `users` (`userId`, `employeeId`, `email`, `role`, `positionID`, `password`, `firstName`, `middleName`, `lastName`, `suffix`, `phone`, `profilePicture`, `departmentId`, `divisionId`, `createdAt`, `signature`, `isActive`, `activationToken`, `tokenExpiresAt`, `isApproved`, `googleId`, `avatarUrl`) VALUES
+(1, NULL, 'employee@deped.gov.ph', 'User', NULL, '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Gabriel', NULL, 'Reyes', NULL, NULL, NULL, 1, NULL, '2026-02-12 07:34:33', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAjsAAAEnCAYAAABPKoImAAAQAElEQVR4AezdX+h9X17f95NqyKR10kmj7QzMVIVchEJhpLQZy8iYi6YjtNSgIeOF1ZCU5M4ZcJjclHGgBQeF6FULbTBCwYEqOvSPKV4YScIYaImQC1uaYqyCAxmiSW0zrRq7Ht/5vr+/9Vnfvc/Z5//e57y+7Pd3/V/rvZ5r7/V+f/be55x/YZd/IRACIRACIRACIXDABOLsPPDiZmohEAIhEALHEEjdRyUQZ+dRVzbzCoEQCIEQCIEQeEUgzs4rDPkvBEIgBJYTSM0QCIEQWAuBODtbr2gbAiEQAiEQAiFwVQJxdq6KN52HQAgsJ5CaIRACIXAdAnF2rsM1vYZACIRACIRACKyEQJydlSxE1FhOIDVDIARCIARC4BgCcXaOoZW6IRACIRACIRACmyPwwM7O5tYiCodACIRACIRACFyBQJydK0BNlyEQAiEQAiGwKgJPrkycnSc/ATL9EAiBEAiBEHh0AnF2Hn2FM78QCIEQWE4gNUPgIQnE2XnIZc2kQiAEQiAEQiAEikCcnSKRMARCYDmB1AyBEAiBDRGIs7OhxYqqIRACIRACIRACxxOIs3M8s7RYTiA1QyAEQiAEQuDuBOLs3H0JokAIhEAIhEAIhcB1CcTZuRrWdBoCIZAcgTg7h7y8mTwEQiAEQiAEQmDrBOLE2TmG1jsEQuDpCcTZ6eulbQiEQAiEQAiEwHUJxNm5Gtp1j9Zi4uw8/PJm8hAIgRAIgRAIgU0TiBNn5xhW7xAIgaen8QIhyrNP0QAAAABJRU5ErkJggg==', 1, NULL, NULL, 1, NULL, NULL),
+(2, NULL, 'boss@deped.gov.ph', 'Officer', NULL, '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Carl', NULL, 'Dolino', NULL, NULL, NULL, 2, NULL, '2026-02-12 07:34:33', NULL, 1, NULL, NULL, 1, NULL, NULL),
+(3, NULL, 'tech@deped.gov.ph', 'Technician', NULL, '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Bill', NULL, 'Variacion', NULL, NULL, NULL, 4, NULL, '2026-02-12 07:34:33', NULL, 1, NULL, NULL, 1, NULL, NULL);
 
 --
 -- Indexes for dumped tables
@@ -232,6 +518,12 @@ ALTER TABLE `category`
 --
 ALTER TABLE `department`
   ADD PRIMARY KEY (`departmentId`);
+
+--
+-- Indexes for table `position`
+--
+ALTER TABLE `position`
+  ADD PRIMARY KEY (`positionID`);
 
 --
 -- Indexes for table `notification`
@@ -282,6 +574,12 @@ ALTER TABLE `department`
   MODIFY `departmentId` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
 
 --
+-- AUTO_INCREMENT for table `position`
+--
+ALTER TABLE `position`
+  MODIFY `positionID` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=257;
+
+--
 -- AUTO_INCREMENT for table `notification`
 --
 ALTER TABLE `notification`
@@ -328,7 +626,14 @@ ALTER TABLE `ticket`
 -- Constraints for table `users`
 --
 ALTER TABLE `users`
-  ADD CONSTRAINT `fk_users_department` FOREIGN KEY (`departmentId`) REFERENCES `department` (`departmentId`) ON DELETE RESTRICT ON UPDATE CASCADE;
+  ADD CONSTRAINT `fk_users_department` FOREIGN KEY (`departmentId`) REFERENCES `department` (`departmentId`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_users_position` FOREIGN KEY (`positionID`) REFERENCES `position` (`positionID`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+--
+-- Constraints for table `department`
+--
+ALTER TABLE `department`
+  ADD CONSTRAINT `fk_department_position` FOREIGN KEY (`positionID`) REFERENCES `position` (`positionID`) ON DELETE RESTRICT ON UPDATE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

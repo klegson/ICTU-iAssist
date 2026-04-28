@@ -114,7 +114,7 @@ function formatTimeAgo($datetime)
                                 <?php
                                 $sql = "SELECT t.*, u.firstName, u.lastName, d.departmentName, c.categoryName,
                                         CONCAT(t2.firstName, ' ', t2.lastName) as technicianName
-                                        FROM ticket t 
+                                        FROM ticket t
                                         JOIN users u ON t.userId = u.userId
                                         LEFT JOIN department d ON u.departmentId = d.departmentId
                                         LEFT JOIN category c ON t.categoryId = c.categoryId
@@ -123,9 +123,11 @@ function formatTimeAgo($datetime)
                                         ORDER BY t.createdAt ASC";
 
                                 $stmt = $pdo->query($sql);
+                                $accountTickets = $stmt->fetchAll();
+                                $accountCount = count($accountTickets);
 
-                                if ($stmt->rowCount() > 0) {
-                                    while ($row = $stmt->fetch()) {
+                                if ($accountCount > 0) {
+                                    foreach ($accountTickets as $row) {
                                         $exactDate = date("M d, Y", strtotime($row['createdAt']));
                                         $aging = formatTimeAgo($row['createdAt']);
                                         $agingColor = (strpos($aging, 'd') !== false) ? 'text-danger' : 'text-muted';
@@ -182,17 +184,19 @@ function formatTimeAgo($datetime)
                             <tbody>
                                 <?php
                                 $sql = "SELECT t.*, u.firstName, u.lastName, d.departmentName, c.categoryName
-                                        FROM ticket t 
-                                        JOIN users u ON t.userId = u.userId 
-                                        LEFT JOIN department d ON u.departmentId = d.departmentId 
+                                        FROM ticket t
+                                        JOIN users u ON t.userId = u.userId
+                                        LEFT JOIN department d ON u.departmentId = d.departmentId
                                         LEFT JOIN category c ON t.categoryId = c.categoryId
                                         WHERE t.status = 'Pending' AND (c.categoryType != 'Account Services' OR c.categoryType IS NULL)
                                         ORDER BY t.createdAt ASC";
 
                                 $stmt = $pdo->query($sql);
+                                $tickets = $stmt->fetchAll();
+                                $ticketCount = count($tickets);
 
-                                if ($stmt->rowCount() > 0) {
-                                    while ($row = $stmt->fetch()) {
+                                if ($ticketCount > 0) {
+                                    foreach ($tickets as $row) {
                                         $exactDate = date("M d, Y", strtotime($row['createdAt']));
                                         $aging = formatTimeAgo($row['createdAt']);
                                         $agingColor = (strpos($aging, 'd') !== false) ? 'text-danger' : 'text-muted';

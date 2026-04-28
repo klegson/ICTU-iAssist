@@ -11,13 +11,19 @@ $userId = $_SESSION['user_id'];
 $successMessage = '';
 $errorMessage = '';
 
-$sql = "SELECT u.*, d.departmentName, d.departmentCode 
+$sql = "SELECT u.*, d.departmentName, d.departmentCode, p.positionTitle 
         FROM users u 
         LEFT JOIN department d ON u.departmentId = d.departmentId 
+        LEFT JOIN position p ON u.positionID = p.positionID 
         WHERE u.userId = ?";
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$userId]);
 $user = $stmt->fetch();
+
+$posSql = "SELECT * FROM position ORDER BY positionTitle";
+$posStmt = $pdo->prepare($posSql);
+$posStmt->execute();
+$positions = $posStmt->fetchAll();
 
 if (!$user) {
     header("Location: logout.php");
@@ -42,6 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $lastName = trim($_POST['lastName']);
         $email = trim($_POST['email']);
         $phone = trim($_POST['phone'] ?? '');
+        $positionID = !empty($_POST['positionID']) ? (int)$_POST['positionID'] : null;
         $currentPassword = $_POST['currentPassword'] ?? '';
         $newPassword = $_POST['newPassword'] ?? '';
         $confirmPassword = $_POST['confirmPassword'] ?? '';
@@ -73,14 +80,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 if (!empty($newPassword)) {
                     $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-                    $updateSql = "UPDATE users SET firstName = ?, lastName = ?, email = ?, phone = ?, password = ? WHERE userId = ?";
+                    $updateSql = "UPDATE users SET firstName = ?, lastName = ?, email = ?, phone = ?, positionID = ?, password = ? WHERE userId = ?";
                     $updateStmt = $pdo->prepare($updateSql);
-                    $updateStmt->execute([$firstName, $lastName, $email, $phone, $hashedPassword, $userId]);
+                    $updateStmt->execute([$firstName, $lastName, $email, $phone, $positionID, $hashedPassword, $userId]);
                     $_SESSION['fullname'] = $firstName . ' ' . $lastName;
                 } else {
-                    $updateSql = "UPDATE users SET firstName = ?, lastName = ?, email = ?, phone = ? WHERE userId = ?";
+                    $updateSql = "UPDATE users SET firstName = ?, lastName = ?, email = ?, phone = ?, positionID = ? WHERE userId = ?";
                     $updateStmt = $pdo->prepare($updateSql);
-                    $updateStmt->execute([$firstName, $lastName, $email, $phone, $userId]);
+                    $updateStmt->execute([$firstName, $lastName, $email, $phone, $positionID, $userId]);
                     $_SESSION['fullname'] = $firstName . ' ' . $lastName;
                 }
                 $successMessage = "Profile updated successfully.";
@@ -203,6 +210,9 @@ $page = 'profile';
                                 <?php echo htmlspecialchars($user['role']); ?>
                             </span>
                             <p class="text-muted mb-1"><i class="bi bi-building me-2"></i><?php echo htmlspecialchars(($user['departmentName'] ?? 'N/A') . ' (' . ($user['departmentCode'] ?? 'N/A') . ')'); ?></p>
+                            <?php if (!empty($user['positionTitle'])): ?>
+                                <p class="text-muted mb-1"><i class="bi bi-briefcase me-2"></i><?php echo htmlspecialchars($user['positionTitle']); ?></p>
+                            <?php endif; ?>
                             <p class="text-muted mb-0"><i class="bi bi-calendar3 me-2"></i>Joined <?php echo date("F Y", strtotime($user['createdAt'])); ?></p>
                         </div>
                     </div>
@@ -267,6 +277,17 @@ $page = 'profile';
                                         <input type="email" class="form-control" name="email" value="<?php echo htmlspecialchars($user['email']); ?>" required>
                                     </div>
                                     <div class="col-md-6">
+                                        <label class="form-label">Position</label>
+                                        <select class="form-select" name="positionID">
+                                            <option value="">-- Select Position --</option>
+                                            <?php foreach ($positions as $pos): ?>
+                                                <option value="<?php echo $pos['positionID']; ?>" <?php echo ($user['positionID'] == $pos['positionID']) ? 'selected' : ''; ?>>
+                                                    <?php echo htmlspecialchars($pos['positionTitle']); ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
                                         <label class="form-label">Phone Number</label>
                                         <input type="text" class="form-control" name="phone" value="<?php echo htmlspecialchars($user['phone'] ?? ''); ?>">
                                     </div>
@@ -316,6 +337,10 @@ $page = 'profile';
                                 <div class="col-md-6">
                                     <label class="form-label">Department</label>
                                     <input type="text" class="form-control" value="<?php echo htmlspecialchars(($user['departmentName'] ?? 'N/A') . ' (' . ($user['departmentCode'] ?? 'N/A') . ')'); ?>" readonly>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Position</label>
+                                    <input type="text" class="form-control" value="<?php echo htmlspecialchars($user['positionTitle'] ?? 'N/A'); ?>" readonly>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Phone Number</label>

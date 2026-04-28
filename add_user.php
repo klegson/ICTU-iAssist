@@ -24,14 +24,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_user'])) {
     $password = password_hash($_POST['password'], PASSWORD_BCRYPT);
     $role = $_POST['role'];
     $departmentId = $_POST['departmentId'];
+    $positionID = !empty($_POST['positionID']) ? (int)$_POST['positionID'] : null;
 
     $checkStmt = $pdo->prepare("SELECT userId FROM users WHERE email = ?");
     $checkStmt->execute([$email]);
     if ($checkStmt->rowCount() > 0) {
         $message = "Error: An account with that email already exists.";
     } else {
-        $stmt = $pdo->prepare("INSERT INTO users (firstName, lastName, email, password, role, departmentId, isApproved) VALUES (?, ?, ?, ?, ?, ?, 1)");
-        if ($stmt->execute([$firstName, $lastName, $email, $password, $role, $departmentId])) {
+        $stmt = $pdo->prepare("INSERT INTO users (firstName, lastName, email, password, role, departmentId, positionID, isApproved) VALUES (?, ?, ?, ?, ?, ?, ?, 1)");
+        if ($stmt->execute([$firstName, $lastName, $email, $password, $role, $departmentId, $positionID])) {
             $message = "New user account created successfully!";
         }
     }
@@ -40,13 +41,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_user'])) {
 $deptStmt = $pdo->query("SELECT * FROM department ORDER BY departmentCode ASC");
 $departments = $deptStmt->fetchAll();
 
+$posStmt = $pdo->query("SELECT * FROM position ORDER BY positionTitle ASC");
+$positions = $posStmt->fetchAll();
+
 $pendingStmt = $pdo->query("SELECT * FROM users WHERE isApproved = 0 ORDER BY createdAt DESC");
 $pendingUsers = $pendingStmt->fetchAll();
 
 $activeStmt = $pdo->query("
-    SELECT u.*, d.departmentCode, d.section_unit 
+    SELECT u.*, d.departmentCode, d.section_unit, p.positionTitle 
     FROM users u 
     LEFT JOIN department d ON u.departmentId = d.departmentId 
+    LEFT JOIN position p ON u.positionID = p.positionID 
     WHERE u.isApproved = 1 
     ORDER BY u.lastName ASC
 ");
@@ -140,6 +145,7 @@ $activeUsers = $activeStmt->fetchAll();
                                         <th>Name</th>
                                         <th>Email</th>
                                         <th>Role</th>
+                                        <th>Position</th>
                                         <th>Division / Unit</th>
                                         <th>Status</th>
                                     </tr>
@@ -159,6 +165,7 @@ $activeUsers = $activeStmt->fetchAll();
                                                 ?>
                                                 <span class="badge <?php echo $roleColor; ?>"><?php echo htmlspecialchars($user['role']); ?></span>
                                             </td>
+                                            <td class="text-muted" style="font-size: 0.9rem;"><?php echo htmlspecialchars($user['positionTitle'] ?? 'N/A'); ?></td>
                                             <td>
                                                 <div class="fw-bold" style="font-size: 0.9rem;"><?php echo htmlspecialchars($user['departmentCode'] ?? 'Unassigned'); ?></div>
                                                 <div class="text-muted" style="font-size: 0.8rem;"><?php echo htmlspecialchars($user['section_unit'] ?? ''); ?></div>
@@ -215,7 +222,18 @@ $activeUsers = $activeStmt->fetchAll();
                                         <option value="Officer">ICT Officer</option>
                                     </select>
                                 </div>
-                                <div class="col-md-8">
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold text-muted">Position</label>
+                                    <select name="positionID" class="form-select">
+                                        <option value="">-- Select Position --</option>
+                                        <?php foreach ($positions as $pos): ?>
+                                            <option value="<?php echo $pos['positionID']; ?>">
+                                                <?php echo htmlspecialchars($pos['positionTitle']); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
                                     <label class="form-label small fw-bold text-muted">Department / Division Assignment</label>
                                     <select name="departmentId" class="form-select" required>
                                         <option value="" disabled selected>-- Select a Division/Unit --</option>
