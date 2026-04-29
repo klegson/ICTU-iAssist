@@ -39,41 +39,35 @@ if (isset($_POST['action']) && isset($_POST['id'])) {
     }
 }
 
-$sql = "SELECT s.*, u.firstName, u.lastName, u.role, d.departmentName 
-        FROM starlink s 
-        JOIN users u ON s.userId = u.userId 
-        LEFT JOIN department d ON u.departmentId = d.departmentId 
+$sql = "SELECT s.*, u.firstName, u.lastName, u.role, d.departmentName
+        FROM starlink s
+        JOIN users u ON s.userId = u.userId
+        LEFT JOIN department d ON u.departmentId = d.departmentId
         ORDER BY s.event_date DESC";
 $stmt = $pdo->query($sql);
+
+$pageTitle = 'Starlink Inventory - DepEd Helpdesk';
+include 'head.php';
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <title>Starlink Inventory - DepEd Helpdesk</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="style.css">
-</head>
-
 <body class="bg-light">
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <div style="position: fixed; top: 0; left: 0; height: 100vh; width: 280px; z-index: 1000; overflow-y: auto;">
-        <?php include 'sidebar_officer.php'; ?>
-    </div>
+    <div class="d-flex flex-column flex-md-row" style="min-height: 100vh;">
+        <div class="sidebar-wrapper">
+            <?php include 'sidebar.php'; ?>
+        </div>
 
-    <div style="margin-left: 280px;">
+        <div class="flex-grow-1 main-content" style="min-height: 100vh; overflow-y: auto;">
 
-        <?php require 'header.php'; ?>
+            <?php require 'header.php'; ?>
 
-        <div class="container-fluid py-5 px-5">
+            <div class="container-fluid py-5 px-5">
 
-            <div class="mb-4">
-                <h2 class="fw-bold text-dark mb-1"><i class="bi bi-router-fill me-2"></i>Starlink Inventory Manager</h2>
-                <p class="text-muted">Manage borrowing requests and track equipment status.</p>
-            </div>
+                <div class="mb-4">
+                    <h2 class="fw-bold text-dark mb-1"><i class="bi bi-router-fill me-2"></i>Starlink Inventory Manager</h2>
+                    <p class="text-muted">Manage borrowing requests and track equipment status.</p>
+                </div>
 
             <?php if ($msg): ?>
                 <div class="alert <?php echo $msgType; ?> alert-dismissible fade show" role="alert">
@@ -191,6 +185,34 @@ $stmt = $pdo->query($sql);
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebarWrapper = document.querySelector('.sidebar-wrapper');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        if (sidebarToggle && sidebarWrapper && sidebarOverlay) {
+            sidebarToggle.addEventListener('click', function() {
+                sidebarWrapper.querySelector('.sidebar-container').classList.toggle('show');
+                sidebarOverlay.classList.toggle('show');
+            });
+
+            sidebarOverlay.addEventListener('click', function() {
+                sidebarWrapper.querySelector('.sidebar-container').classList.remove('show');
+                sidebarOverlay.classList.remove('show');
+            });
+        }
+
+        if (window.innerWidth <= 768) {
+            document.querySelectorAll('.sidebar-container .nav-link').forEach(function(link) {
+                link.addEventListener('click', function() {
+                    sidebarWrapper.querySelector('.sidebar-container').classList.remove('show');
+                    sidebarOverlay.classList.remove('show');
+                });
+            });
+        }
+    });
+    </script>
 </body>
 
 </html>

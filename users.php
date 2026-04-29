@@ -7,53 +7,47 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'Officer' && $_SESSIO
     exit;
 }
 $page = 'users';
+
+$pageTitle = 'Manage Users - DepEd Helpdesk';
+include 'head.php';
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <title>Manage Users - DepEd Helpdesk</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="style.css">
-</head>
-
 <body class="bg-light">
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <div style="position: fixed; top: 0; left: 0; height: 100vh; width: 280px; z-index: 1000; overflow-y: auto;">
-        <?php
-        if ($_SESSION['role'] === 'Technician') {
-            include 'sidebar_tech.php';
-        } else {
-            include 'sidebar_officer.php';
-        }
-        ?>
-    </div>
+    <div class="d-flex flex-column flex-md-row" style="min-height: 100vh;">
+        <div class="sidebar-wrapper">
+            <?php
+            if ($_SESSION['role'] === 'Technician') {
+                include 'sidebar.php';
+            } else {
+                include 'sidebar.php';
+            }
+            ?>
+        </div>
 
-    <div style="margin-left: 280px;">
+        <div class="flex-grow-1 main-content" style="min-height: 100vh; overflow-y: auto;">
 
-        <?php include 'header.php'; ?>
+            <?php include 'header.php'; ?>
 
-        <div class="container-fluid py-5 px-5">
+            <div class="container-fluid py-5 px-5">
 
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="fw-bold text-dark m-0"><i class="bi bi-people-fill me-2"></i>User Directory</h2>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="fw-bold text-dark m-0"><i class="bi bi-people-fill me-2"></i>User Directory</h2>
 
-                <div class="d-flex align-items-center">
-                    <div class="btn-group me-4 shadow-sm" role="group" aria-label="Role Filter">
-                        <button type="button" class="btn btn-secondary active filter-btn" data-filter="all">All</button>
-                        <button type="button" class="btn btn-outline-secondary filter-btn" data-filter="Officer">Officers</button>
-                        <button type="button" class="btn btn-outline-secondary filter-btn" data-filter="Technician">Technicians</button>
-                        <button type="button" class="btn btn-outline-secondary filter-btn" data-filter="User">Users</button>
+                    <div class="d-flex align-items-center">
+                        <div class="btn-group me-4 shadow-sm" role="group" aria-label="Role Filter">
+                            <button type="button" class="btn btn-secondary active filter-btn" data-filter="all">All</button>
+                            <button type="button" class="btn btn-outline-secondary filter-btn" data-filter="Officer">Officers</button>
+                            <button type="button" class="btn btn-outline-secondary filter-btn" data-filter="Technician">Technicians</button>
+                            <button type="button" class="btn btn-outline-secondary filter-btn" data-filter="User">Users</button>
+                        </div>
+
+                        <a href="add_user.php" class="btn btn-success fw-bold shadow-sm">
+                            <i class="bi bi-person-plus-fill me-2"></i> Add New User
+                        </a>
                     </div>
-
-                    <a href="add_user.php" class="btn btn-success fw-bold shadow-sm">
-                        <i class="bi bi-person-plus-fill me-2"></i> Add New User
-                    </a>
                 </div>
-            </div>
 
             <div class="card shadow-sm border-0">
                 <div class="card-body p-0">
@@ -143,6 +137,36 @@ $page = 'users';
             });
         });
     </script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebarWrapper = document.querySelector('.sidebar-wrapper');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        if (sidebarToggle && sidebarWrapper && sidebarOverlay) {
+            sidebarToggle.addEventListener('click', function() {
+                sidebarWrapper.querySelector('.sidebar-container').classList.toggle('show');
+                sidebarOverlay.classList.toggle('show');
+            });
+
+            sidebarOverlay.addEventListener('click', function() {
+                sidebarWrapper.querySelector('.sidebar-container').classList.remove('show');
+                sidebarOverlay.classList.remove('show');
+            });
+        }
+
+        if (window.innerWidth <= 768) {
+            document.querySelectorAll('.sidebar-container .nav-link').forEach(function(link) {
+                link.addEventListener('click', function() {
+                    sidebarWrapper.querySelector('.sidebar-container').classList.remove('show');
+                    sidebarOverlay.classList.remove('show');
+                });
+            });
+        }
+    });
+    </script>
+
 </body>
 
 </html>

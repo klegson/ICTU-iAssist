@@ -48,37 +48,31 @@ $pendingStmt = $pdo->query("SELECT * FROM users WHERE isApproved = 0 ORDER BY cr
 $pendingUsers = $pendingStmt->fetchAll();
 
 $activeStmt = $pdo->query("
-    SELECT u.*, d.departmentCode, d.section_unit, p.positionTitle 
-    FROM users u 
-    LEFT JOIN department d ON u.departmentId = d.departmentId 
-    LEFT JOIN position p ON u.positionID = p.positionID 
-    WHERE u.isApproved = 1 
+    SELECT u.*, d.departmentCode, d.section_unit, p.positionTitle
+    FROM users u
+    LEFT JOIN department d ON u.departmentId = d.departmentId
+    LEFT JOIN position p ON u.positionID = p.positionID
+    WHERE u.isApproved = 1
     ORDER BY u.lastName ASC
 ");
 $activeUsers = $activeStmt->fetchAll();
+
+$pageTitle = 'Manage Users | DepEd Helpdesk';
+include 'head.php';
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <title>Manage Users | DepEd Helpdesk</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="style.css?v=<?php echo time(); ?>">
-</head>
-
 <body>
-    <div class="d-flex" style="min-height: 100vh;">
-        <div style="width: 280px; flex-shrink: 0;">
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="d-flex flex-column flex-md-row" style="min-height: 100vh;">
+        <div class="sidebar-wrapper">
             <?php include 'sidebar.php'; ?>
         </div>
 
-        <div class="flex-grow-1" style="max-height: 100vh; overflow-y: auto;">
+        <div class="flex-grow-1 main-content" style="min-height: 100vh; overflow-y: auto;">
             <?php include 'header.php'; ?>
 
-            <div class="flex-grow-1 bg-light" style="max-height: 100vh; overflow-y: auto;">
+            <div class="flex-grow-1 bg-light" style="min-height: 100vh; overflow-y: auto;">
                 <div class="container-fluid py-5 px-5">
 
                     <div class="d-flex justify-content-between align-items-center mb-5">

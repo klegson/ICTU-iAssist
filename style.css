@@ -66,6 +66,49 @@ body.login-body {
     color: white;
 }
 
+.sidebar-container {
+    width: 280px;
+    height: 100vh;
+    background-color: #1e2125;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1040;
+}
+
+.sidebar-link {
+    color: #adb5bd;
+    padding: 12px 20px;
+    border-radius: 8px;
+    display: flex;
+    align-items-center;
+    margin-bottom: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.sidebar-link i {
+    margin-right: 15px;
+    font-size: 1.1rem;
+}
+
+.sidebar-link:hover {
+    color: white;
+}
+
+.sidebar-link.active-sidebar {
+    background-color: var(--deped-green);
+    color: white;
+}
+
+.main-content {
+    margin-left: 280px;
+    width: calc(100% - 280px);
+}
+
 .sidebar-link {
     color: #adb5bd;
     padding: 12px 20px;
@@ -173,4 +216,133 @@ body.login-body {
 .badge.bg-success {
     background-color: #d4edda !important;
     color: #155724;
+}
+
+/* Sidebar Wrapper */
+.sidebar-wrapper {
+    width: 280px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .sidebar-container {
+        position: fixed;
+        top: 0;
+        left: -280px;
+        transition: left 0.3s ease;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+    }
+
+    .sidebar-container.show {
+        left: 0;
+    }
+
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 1039;
+    }
+
+    .sidebar-overlay.show {
+        display: block;
+    }
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .login-card {
+        padding: 25px 20px;
+        margin: 15px;
+    }
+
+    .deped-logo {
+        width: 80px;
+    }
+
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 1049;
+    }
+
+    .sidebar-overlay.show {
+        display: block;
+    }
+
+    .mobile-sidebar-toggle {
+        display: inline-block !important;
+    }
+
+    .main-content {
+        width: 100% !important;
+    }
+
+    .stat-card {
+        padding: 16px;
+    }
+
+    .container-fluid {
+        padding-left: 15px !important;
+        padding-right: 15px !important;
+    }
+
+    h2.fw-bold {
+        font-size: 1.3rem;
+    }
+
+    .table-responsive {
+        font-size: 0.85rem;
+    }
+
+    .btn-deped-primary {
+        padding: 8px 16px;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .login-card {
+        padding: 20px 15px;
+    }
+
+    .stat-card h3 {
+        font-size: 1.5rem;
+    }
+
+    .sidebar-link {
+        padding: 10px 15px;
+        font-size: 0.9rem;
+    }
+
+    .header-deped .navbar-brand {
+        font-size: 0.9rem;
+    }
+
+    .dropdown-menu {
+        width: 300px !important;
+    }
+}
+
+.mobile-sidebar-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.2rem;
+    padding: 5px 10px;
 }

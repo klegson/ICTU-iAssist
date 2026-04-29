@@ -26,7 +26,7 @@ if (isset($_POST['update_ticket'])) {
         $description = "Custom Category: " . $manualCategory . "\n\n" . $description;
     }
 
-    $sql = "UPDATE ticket SET subject = ?, categoryId = ?, description = ?, updatedAt = NOW() 
+    $sql = "UPDATE ticket SET subject = ?, categoryId = ?, description = ?, updatedAt = NOW()
             WHERE ticketId = ? AND userId = ? AND status = 'Pending'";
     $stmt = $pdo->prepare($sql);
 
@@ -48,27 +48,20 @@ if (isset($_GET['id'])) {
         exit;
     }
 }
+
+$pageTitle = 'Edit Ticket #' . $ticketId;
+include 'head.php';
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <title>Edit Ticket #<?php echo $ticketId; ?></title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="style.css?v=<?php echo time(); ?>">
-</head>
-
 <body>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <div class="d-flex" style="min-height: 100vh;">
-        <div style="width: 280px; flex-shrink: 0;">
-            <?php include 'sidebar_user.php'; ?>
+    <div class="d-flex flex-column flex-md-row" style="min-height: 100vh;">
+        <div class="sidebar-wrapper">
+            <?php include 'sidebar.php'; ?>
         </div>
 
-        <div class="flex-grow-1" style="max-height: 100vh; overflow-y: auto;">
+        <div class="flex-grow-1 main-content" style="min-height: 100vh; overflow-y: auto;">
             <?php include 'header.php'; ?>
 
             <div class="container-fluid py-5 px-5">
@@ -187,6 +180,36 @@ if (isset($_GET['id'])) {
             });
         });
     </script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebarWrapper = document.querySelector('.sidebar-wrapper');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        if (sidebarToggle && sidebarWrapper && sidebarOverlay) {
+            sidebarToggle.addEventListener('click', function() {
+                sidebarWrapper.querySelector('.sidebar-container').classList.toggle('show');
+                sidebarOverlay.classList.toggle('show');
+            });
+
+            sidebarOverlay.addEventListener('click', function() {
+                sidebarWrapper.querySelector('.sidebar-container').classList.remove('show');
+                sidebarOverlay.classList.remove('show');
+            });
+        }
+
+        if (window.innerWidth <= 768) {
+            document.querySelectorAll('.sidebar-container .nav-link').forEach(function(link) {
+                link.addEventListener('click', function() {
+                    sidebarWrapper.querySelector('.sidebar-container').classList.remove('show');
+                    sidebarOverlay.classList.remove('show');
+                });
+            });
+        }
+    });
+    </script>
+
 </body>
 
 </html>

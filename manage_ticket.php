@@ -50,27 +50,21 @@ if (!$ticket) {
 
 $techStmt = $pdo->query("SELECT userId, firstName, lastName FROM users WHERE role IN ('Technician', 'Officer') AND isApproved = 1 ORDER BY firstName ASC");
 $technicians = $techStmt->fetchAll();
+
+$pageTitle = 'Manage Ticket #' . htmlspecialchars($ticketId);
+include 'head.php';
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <title>Manage Ticket #<?php echo htmlspecialchars($ticketId); ?></title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="style.css?v=<?php echo time(); ?>">
-</head>
-
 <body>
-    <div class="d-flex" style="min-height: 100vh;">
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-        <div style="width: 280px; flex-shrink: 0;">
+    <div class="d-flex flex-column flex-md-row" style="min-height: 100vh;">
+
+        <div class="sidebar-wrapper">
             <?php include 'sidebar.php'; ?>
         </div>
 
-        <div class="flex-grow-1 bg-light" style="max-height: 100vh; overflow-y: auto;">
+        <div class="flex-grow-1 bg-light main-content" style="min-height: 100vh; overflow-y: auto;">
             <div class="container-fluid py-5 px-5">
 
                 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -196,6 +190,34 @@ $technicians = $techStmt->fetchAll();
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebarWrapper = document.querySelector('.sidebar-wrapper');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        if (sidebarToggle && sidebarWrapper && sidebarOverlay) {
+            sidebarToggle.addEventListener('click', function() {
+                sidebarWrapper.querySelector('.sidebar-container').classList.toggle('show');
+                sidebarOverlay.classList.toggle('show');
+            });
+
+            sidebarOverlay.addEventListener('click', function() {
+                sidebarWrapper.querySelector('.sidebar-container').classList.remove('show');
+                sidebarOverlay.classList.remove('show');
+            });
+        }
+
+        if (window.innerWidth <= 768) {
+            document.querySelectorAll('.sidebar-container .nav-link').forEach(function(link) {
+                link.addEventListener('click', function() {
+                    sidebarWrapper.querySelector('.sidebar-container').classList.remove('show');
+                    sidebarOverlay.classList.remove('show');
+                });
+            });
+        }
+    });
+    </script>
 </body>
 
 </html>

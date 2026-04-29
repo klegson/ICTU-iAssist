@@ -11,10 +11,10 @@ $userId = $_SESSION['user_id'];
 $successMessage = '';
 $errorMessage = '';
 
-$sql = "SELECT u.*, d.departmentName, d.departmentCode, p.positionTitle 
-        FROM users u 
-        LEFT JOIN department d ON u.departmentId = d.departmentId 
-        LEFT JOIN position p ON u.positionID = p.positionID 
+$sql = "SELECT u.*, d.departmentName, d.departmentCode, p.positionTitle
+        FROM users u
+        LEFT JOIN department d ON u.departmentId = d.departmentId
+        LEFT JOIN position p ON u.positionID = p.positionID
         WHERE u.userId = ?";
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$userId]);
@@ -88,85 +88,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $updateSql = "UPDATE users SET firstName = ?, lastName = ?, email = ?, phone = ?, positionID = ? WHERE userId = ?";
                     $updateStmt = $pdo->prepare($updateSql);
                     $updateStmt->execute([$firstName, $lastName, $email, $phone, $positionID, $userId]);
-                    $_SESSION['fullname'] = $firstName . ' ' . $lastName;
                 }
-                $successMessage = "Profile updated successfully.";
-                $stmt->execute([$userId]);
-                $user = $stmt->fetch();
-            } catch (PDOException $e) {
-                $errorMessage = "Failed to update profile: " . $e->getMessage();
-            }
-        } else {
-            $errorMessage = implode(" ", $errors);
-        }
-    }
 
-    if (isset($_POST['upload_picture'])) {
-        if (isset($_FILES['profilePicture']) && $_FILES['profilePicture']['error'] === 0) {
-            $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-            $filename = $_FILES['profilePicture']['name'];
-            $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-
-            if (in_array($ext, $allowed)) {
-                $newFilename = 'user_' . $userId . '_' . time() . '.' . $ext;
-                $uploadPath = 'uploads/profiles/' . $newFilename;
-
-                if (move_uploaded_file($_FILES['profilePicture']['tmp_name'], $uploadPath)) {
-                    $oldPicture = $user['profilePicture'] ?? null;
-                    try {
-                        $updatePicSql = "UPDATE users SET profilePicture = ? WHERE userId = ?";
-                        $updatePicStmt = $pdo->prepare($updatePicSql);
-                        $updatePicStmt->execute([$uploadPath, $userId]);
-
-                        if ($oldPicture && file_exists($oldPicture) && $oldPicture !== 'uploads/profiles/default.png') {
-                            unlink($oldPicture);
-                        }
-
-                        $successMessage = "Profile picture updated successfully.";
-                        $stmt->execute([$userId]);
-                        $user = $stmt->fetch();
-                    } catch (PDOException $e) {
-                        $errorMessage = "Failed to update profile picture: " . $e->getMessage();
+                if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
+                    $uploadDir = 'uploads/';
+                    if (!is_dir($uploadDir)) {
+                        mkdir($uploadDir, 0755, true);
                     }
-                } else {
-                    $errorMessage = "Failed to upload file.";
+
+                    $fileExt = strtolower(pathinfo($_FILES['profile_picture']['name'], PATHINFO_EXTENSION));
+                    $allowedExt = ['jpg', 'jpeg', 'png', 'gif'];
+
+                    if (in_array($fileExt, $allowedExt)) {
+                        $newFilename = 'user_' . $userId . '_' . time() . '.' . $fileExt;
+                        $targetPath = $uploadDir . $newFilename;
+
+                        if (move_uploaded_file($_FILES['profile_picture']['tmp_name'], $targetPath)) {
+                            if (!empty($user['profilePicture']) && file_exists($user['profilePicture'])) {
+                                unlink($user['profilePicture']);
+                            }
+
+                            $picStmt = $pdo->prepare("UPDATE users SET profilePicture = ? WHERE userId = ?");
+                            $picStmt->execute([$targetPath, $userId]);
+                        }
+                    }
                 }
-            } else {
-                $errorMessage = "Invalid file type. Allowed: jpg, jpeg, png, gif, webp.";
+
+                $successMessage = "Profile updated successfully!";
+                $user = $pdo->prepare($sql)->execute([$userId])->fetch(); // Refresh user data
+                $user['profilePicture'] = $targetPath ?? $user['profilePicture'];
+            } catch (Exception $e) {
+                $errorMessage = "Error updating profile: " . $e->getMessage();
             }
         } else {
-            $errorMessage = "Please select a valid image to upload.";
+            $errorMessage = implode('<br>', $errors);
         }
     }
 }
 
-$profilePicture = $user['profilePicture'] ?? null;
-
 $page = 'profile';
+$pageTitle = 'My Profile - DepEd Helpdesk';
+include 'head.php';
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <title>My Profile - DepEd Helpdesk</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="style.css">
-</head>
-
 <body class="bg-light">
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <div style="position: fixed; top: 0; left: 0; height: 100vh; width: 280px; z-index: 1000; overflow-y: auto;">
-        <?php include 'sidebar.php'; ?>
-    </div>
+    <div class="d-flex flex-column flex-md-row" style="min-height: 100vh;">
+        <div class="sidebar-wrapper">
+            <?php include 'sidebar.php'; ?>
+        </div>
 
-    <div style="margin-left: 280px;">
+        <div class="flex-grow-1 main-content" style="min-height: 100vh; overflow-y: auto;">
 
-        <?php include 'header.php'; ?>
+            <?php include 'header.php'; ?>
 
-        <div class="container-fluid py-5 px-5">
+            <div class="container-fluid py-5 px-5">
 
             <?php if (!empty($successMessage)): ?>
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -361,6 +338,34 @@ $page = 'profile';
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebarWrapper = document.querySelector('.sidebar-wrapper');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        if (sidebarToggle && sidebarWrapper && sidebarOverlay) {
+            sidebarToggle.addEventListener('click', function() {
+                sidebarWrapper.querySelector('.sidebar-container').classList.toggle('show');
+                sidebarOverlay.classList.toggle('show');
+            });
+
+            sidebarOverlay.addEventListener('click', function() {
+                sidebarWrapper.querySelector('.sidebar-container').classList.remove('show');
+                sidebarOverlay.classList.remove('show');
+            });
+        }
+
+        if (window.innerWidth <= 768) {
+            document.querySelectorAll('.sidebar-container .nav-link').forEach(function(link) {
+                link.addEventListener('click', function() {
+                    sidebarWrapper.querySelector('.sidebar-container').classList.remove('show');
+                    sidebarOverlay.classList.remove('show');
+                });
+            });
+        }
+    });
+    </script>
 
 </body>
 

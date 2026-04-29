@@ -43,8 +43,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['complete_request'])) 
 }
 
 $sql = "SELECT ar.*, u.firstName, u.lastName, d.departmentName, c.categoryName
-        FROM account_request ar 
-        JOIN users u ON ar.userId = u.userId 
+        FROM account_request ar
+        JOIN users u ON ar.userId = u.userId
         LEFT JOIN department d ON u.departmentId = d.departmentId
         JOIN category c ON ar.categoryId = c.categoryId
         WHERE ar.accountRequestId = ?";
@@ -59,27 +59,21 @@ if (!$request) {
 
 $techStmt = $pdo->query("SELECT userId, firstName, lastName FROM users WHERE role = 'Technician' AND isApproved = 1 ORDER BY firstName ASC");
 $technicians = $techStmt->fetchAll();
+
+$pageTitle = 'Manage Account Request #' . htmlspecialchars($requestId);
+include 'head.php';
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <title>Manage Account Request #<?php echo htmlspecialchars($requestId); ?></title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="style.css?v=<?php echo time(); ?>">
-</head>
-
 <body>
-    <div class="d-flex" style="min-height: 100vh;">
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-        <div style="width: 280px; flex-shrink: 0;">
+    <div class="d-flex flex-column flex-md-row" style="min-height: 100vh;">
+
+        <div class="sidebar-wrapper">
             <?php include 'sidebar.php'; ?>
         </div>
 
-        <div class="flex-grow-1 bg-light" style="max-height: 100vh; overflow-y: auto;">
+        <div class="flex-grow-1 bg-light main-content" style="min-height: 100vh; overflow-y: auto;">
             <div class="container-fluid py-5 px-5">
 
                 <div class="d-flex justify-content-between align-items-center mb-4">

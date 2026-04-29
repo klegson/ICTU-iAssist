@@ -26,44 +26,10 @@ if (isset($_POST['save_signature']) && !empty($_POST['signature_data'])) {
         exit;
     }
 }
+
+$pageTitle = 'Setup E-Signature | DepEd Helpdesk';
+include 'head.php';
 ?>
-
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <title>Setup E-Signature | DepEd Helpdesk</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="style.css?v=<?php echo time(); ?>">
-
-    <style>
-        body {
-            background-color: #f4f6f9;
-        }
-
-        .signature-container {
-            position: relative;
-            width: 100%;
-            height: 250px;
-            background-color: #fff;
-            border: 2px dashed #ced4da;
-            border-radius: 0.5rem;
-            overflow: hidden;
-            cursor: crosshair;
-        }
-
-        .signature-pad {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            touch-action: none;
-        }
-    </style>
-</head>
 
 <body class="d-flex align-items-center justify-content-center" style="min-height: 100vh;">
 

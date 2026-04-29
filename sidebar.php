@@ -32,10 +32,8 @@ function isActive($pageName, $currentPage)
         width: 280px;
         height: 100vh;
         background-color: #1e2125;
-        position: fixed;
         display: flex;
         flex-direction: column;
-        z-index: 1000;
     }
 
     .custom-hover:hover {
