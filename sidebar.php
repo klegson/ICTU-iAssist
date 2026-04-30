@@ -34,6 +34,10 @@ function isActive($pageName, $currentPage)
         background-color: #1e2125;
         display: flex;
         flex-direction: column;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1040;
     }
 
     .custom-hover:hover {
@@ -101,8 +105,8 @@ function isActive($pageName, $currentPage)
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="starlink.php" class="nav-link <?= isActive('starlink.php', $currentPage) ?>">
-                        <i class="bi bi-router me-3 fs-5 align-middle"></i> Starlink Inventory
+                    <a href="starlink_officer.php" class="nav-link <?= isActive('starlink_officer.php', $currentPage) ?>">
+                        <i class="bi bi-router me-3 fs-5 align-middle"></i> Starlink Requests
                     </a>
                 </li>
                 <li class="nav-item">
@@ -128,8 +132,8 @@ function isActive($pageName, $currentPage)
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="starlink.php" class="nav-link <?= isActive('starlink.php', $currentPage) ?>">
-                        <i class="bi bi-router me-3 fs-5 align-middle"></i> Starlink Inventory
+                    <a href="starlink_technician.php" class="nav-link <?= isActive('starlink_technician.php', $currentPage) ?>">
+                        <i class="bi bi-router me-3 fs-5 align-middle"></i> Starlink Requests
                     </a>
                 </li>
 

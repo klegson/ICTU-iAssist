@@ -427,6 +427,7 @@ CREATE TABLE `starlink` (
   `description` text COLLATE utf8mb4_general_ci NOT NULL,
   `event_date` date NOT NULL,
   `location` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `status` enum('Pending','Approved','Rejected','Returned') COLLATE utf8mb4_general_ci DEFAULT 'Pending',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 

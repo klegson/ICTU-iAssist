@@ -59,10 +59,8 @@ include 'head.php';
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <div class="d-flex flex-column flex-md-row" style="min-height: 100vh;">
-
-        <div class="sidebar-wrapper">
-            <?php include 'sidebar.php'; ?>
-        </div>
+        <div style="width: 280px; flex-shrink: 0;"></div>
+        <?php include 'sidebar.php'; ?>
 
         <div class="flex-grow-1 bg-light main-content" style="min-height: 100vh; overflow-y: auto;">
             <div class="container-fluid py-5 px-5">
@@ -193,17 +191,17 @@ include 'head.php';
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         const sidebarToggle = document.getElementById('sidebarToggle');
-        const sidebarWrapper = document.querySelector('.sidebar-wrapper');
+        const sidebarContainer = document.querySelector('.sidebar-container');
         const sidebarOverlay = document.getElementById('sidebarOverlay');
 
-        if (sidebarToggle && sidebarWrapper && sidebarOverlay) {
+        if (sidebarToggle && sidebarContainer && sidebarOverlay) {
             sidebarToggle.addEventListener('click', function() {
-                sidebarWrapper.querySelector('.sidebar-container').classList.toggle('show');
+                sidebarContainer.classList.toggle('show');
                 sidebarOverlay.classList.toggle('show');
             });
 
             sidebarOverlay.addEventListener('click', function() {
-                sidebarWrapper.querySelector('.sidebar-container').classList.remove('show');
+                sidebarContainer.classList.remove('show');
                 sidebarOverlay.classList.remove('show');
             });
         }
@@ -211,7 +209,7 @@ include 'head.php';
         if (window.innerWidth <= 768) {
             document.querySelectorAll('.sidebar-container .nav-link').forEach(function(link) {
                 link.addEventListener('click', function() {
-                    sidebarWrapper.querySelector('.sidebar-container').classList.remove('show');
+                    sidebarContainer.classList.remove('show');
                     sidebarOverlay.classList.remove('show');
                 });
             });
