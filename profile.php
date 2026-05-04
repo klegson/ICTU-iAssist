@@ -115,13 +115,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 $successMessage = "Profile updated successfully!";
-                $user = $pdo->prepare($sql)->execute([$userId])->fetch(); // Refresh user data
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([$userId]);
+                $user = $stmt->fetch(); // Refresh user data
                 $user['profilePicture'] = $targetPath ?? $user['profilePicture'];
             } catch (Exception $e) {
                 $errorMessage = "Error updating profile: " . $e->getMessage();
             }
         } else {
             $errorMessage = implode('<br>', $errors);
+        }
+    }
+
+    if (isset($_POST['update_signature']) && !empty($_POST['signature_data'])) {
+        $signatureData = $_POST['signature_data'];
+        $stmt = $pdo->prepare("UPDATE users SET signature = ? WHERE userId = ?");
+        if ($stmt->execute([$signatureData, $userId])) {
+            $successMessage = "Signature updated successfully!";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([$userId]);
+            $user = $stmt->fetch();
+        } else {
+            $errorMessage = "Error updating signature.";
         }
     }
 }
@@ -143,20 +158,6 @@ include 'head.php';
             <?php include 'header.php'; ?>
 
             <div class="container-fluid py-5 px-5">
-
-            <?php if (!empty($successMessage)): ?>
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <i class="bi bi-check-circle me-2"></i><?php echo htmlspecialchars($successMessage); ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            <?php endif; ?>
-
-            <?php if (!empty($errorMessage)): ?>
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="bi bi-exclamation-triangle me-2"></i><?php echo htmlspecialchars($errorMessage); ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            <?php endif; ?>
 
             <div class="row g-4">
 
@@ -298,37 +299,57 @@ include 'head.php';
 
                     <div class="card shadow-sm border-0 mt-4">
                         <div class="card-header bg-white fw-bold py-3">
-                            <i class="bi bi-info-circle me-2 text-success"></i>Account Information
+                            <i class="bi bi-vector-pen me-2 text-success"></i>My Signature
                         </div>
                         <div class="card-body">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">User ID</label>
-                                    <input type="text" class="form-control" value="<?php echo htmlspecialchars($user['userId']); ?>" readonly>
+                            <?php if (!empty($user['signature'])): ?>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Current Signature</label>
+                                    <div class="p-3 border rounded bg-light text-center">
+                                        <img src="<?php echo htmlspecialchars($user['signature']); ?>" alt="Current Signature" style="max-width: 100%; height: auto; max-height: 150px;">
+                                    </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Role</label>
-                                    <input type="text" class="form-control" value="<?php echo htmlspecialchars($user['role']); ?>" readonly>
+                            <?php endif; ?>
+                            <button type="button" class="btn btn-success fw-bold px-4" data-bs-toggle="modal" data-bs-target="#signatureModal">
+                                <i class="bi bi-pencil-square me-2"></i>Update Signature
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="modal fade" id="signatureModal" tabindex="-1" aria-labelledby="signatureModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="signatureModalLabel">Update Your Signature</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Department</label>
-                                    <input type="text" class="form-control" value="<?php echo htmlspecialchars(($user['departmentName'] ?? 'N/A') . ' (' . ($user['departmentCode'] ?? 'N/A') . ')'); ?>" readonly>
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between align-items-end mb-2">
+                                            <label class="fw-bold">Draw your signature below:</label>
+                                            <button type="button" class="btn btn-sm btn-light border text-secondary" id="modal-clear-signature">
+                                                <i class="bi bi-eraser-fill me-1"></i> Clear
+                                            </button>
+                                        </div>
+                                        <div style="border: 2px dashed #dee2e6; border-radius: 8px; background: white; height: 200px;">
+                                            <canvas id="modal-signature-pad" class="signature-pad" style="width: 100%; height: 100%;"></canvas>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Position</label>
-                                    <input type="text" class="form-control" value="<?php echo htmlspecialchars($user['positionTitle'] ?? 'N/A'); ?>" readonly>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Phone Number</label>
-                                    <input type="text" class="form-control" value="<?php echo htmlspecialchars($user['phone'] ?? 'N/A'); ?>" readonly>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Account Created</label>
-                                    <input type="text" class="form-control" value="<?php echo date("F d, Y h:i A", strtotime($user['createdAt'])); ?>" readonly>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="button" class="btn btn-success" id="modal-save-signature">
+                                        <i class="bi bi-check-lg me-2"></i>Save Signature
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
+
+                    <form method="POST" id="signature-update-form">
+                        <input type="hidden" name="update_signature" value="1">
+                        <input type="hidden" name="signature_data" id="modal-signature-data">
+                    </form>
                 </div>
 
             </div>
@@ -337,6 +358,8 @@ include 'head.php';
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         const sidebarToggle = document.getElementById('sidebarToggle');
@@ -363,6 +386,74 @@ include 'head.php';
                 });
             });
         }
+
+        const signatureModal = document.getElementById('signatureModal');
+        let signaturePad = null;
+
+        if (signatureModal) {
+            signatureModal.addEventListener('shown.bs.modal', function() {
+                const canvas = document.getElementById('modal-signature-pad');
+                if (canvas && !signaturePad) {
+                    function resizeCanvas() {
+                        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+                        canvas.width = canvas.offsetWidth * ratio;
+                        canvas.height = canvas.offsetHeight * ratio;
+                        canvas.getContext("2d").scale(ratio, ratio);
+                    }
+                    resizeCanvas();
+                    signaturePad = new SignaturePad(canvas, {
+                        penColor: "rgb(0, 0, 0)",
+                        minWidth: 1.5,
+                        maxWidth: 3
+                    });
+                }
+            });
+
+            signatureModal.addEventListener('hidden.bs.modal', function() {
+                if (signaturePad) {
+                    signaturePad.clear();
+                }
+            });
+
+            const clearBtn = document.getElementById('modal-clear-signature');
+            if (clearBtn) {
+                clearBtn.addEventListener('click', function() {
+                    if (signaturePad) {
+                        signaturePad.clear();
+                    }
+                });
+            }
+
+            const saveBtn = document.getElementById('modal-save-signature');
+            if (saveBtn) {
+                saveBtn.addEventListener('click', function() {
+                    if (!signaturePad || signaturePad.isEmpty()) {
+                        alert('Please draw your signature before saving.');
+                        return;
+                    }
+                    document.getElementById('modal-signature-data').value = signaturePad.toDataURL();
+                    document.getElementById('signature-update-form').submit();
+                });
+            }
+        }
+
+        <?php if (!empty($successMessage)): ?>
+            Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: <?php echo json_encode($successMessage); ?>,
+                confirmButtonColor: '#198754'
+            });
+        <?php endif; ?>
+
+        <?php if (!empty($errorMessage)): ?>
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: <?php echo json_encode($errorMessage); ?>,
+                confirmButtonColor: '#198754'
+            });
+        <?php endif; ?>
     });
     </script>
 
