@@ -30,6 +30,15 @@ if (isset($_POST['action']) && isset($_POST['id'])) {
     if ($newStatus) {
         $updateStmt = $pdo->prepare("UPDATE starlink SET status = ? WHERE eventId = ?");
         if ($updateStmt->execute([$newStatus, $id])) {
+            if ($newStatus === 'Approved') {
+                $userStmt = $pdo->prepare("SELECT userId, reference_number FROM starlink WHERE eventId = ?");
+                $userStmt->execute([$id]);
+                $request = $userStmt->fetch();
+                if ($request) {
+                    $notifMsg = "Your Starlink request (Ref: {$request['reference_number']}) has been approved.";
+                    $pdo->prepare("INSERT INTO notification (message, userId) VALUES (?, ?)")->execute([$notifMsg, $request['userId']]);
+                }
+            }
             $msg = "Request successfully marked as " . $newStatus;
             $msgType = "alert-success";
         } else {
@@ -39,7 +48,11 @@ if (isset($_POST['action']) && isset($_POST['id'])) {
     }
 }
 
-$sql = "SELECT s.* FROM starlink s ORDER BY s.event_date DESC";
+$sql = "SELECT s.*, u.firstName, u.lastName, d.departmentName, d.section_unit
+        FROM starlink s 
+        JOIN users u ON s.userId = u.userId 
+        LEFT JOIN department d ON u.departmentId = d.departmentId 
+        ORDER BY s.event_date DESC";
 $stmt = $pdo->query($sql);
 
 function formatTimeAgo($datetime)
@@ -75,19 +88,9 @@ include 'head.php';
                         <p class="text-muted">Manage and track all Starlink equipment borrowing requests.</p>
                     </div>
 
-                    <div class="d-flex gap-3">
-                        <div class="btn-group shadow-sm" role="group">
-                            <button type="button" class="btn btn-secondary active status-filter" data-status="all">All</button>
-                            <button type="button" class="btn btn-outline-secondary status-filter" data-status="Pending">Pending</button>
-                            <button type="button" class="btn btn-outline-secondary status-filter" data-status="Approved">Approved</button>
-                            <button type="button" class="btn btn-outline-secondary status-filter" data-status="Returned">Returned</button>
-                            <button type="button" class="btn btn-outline-secondary status-filter" data-status="Rejected">Rejected</button>
-                        </div>
-
-                        <div class="input-group shadow-sm" style="width: 300px;">
-                            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-                            <input type="text" id="requestSearch" class="form-control border-start-0" placeholder="Search requests...">
-                        </div>
+                    <div class="input-group shadow-sm" style="width: 300px;">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" id="requestSearch" class="form-control border-start-0" placeholder="Search requests...">
                     </div>
                 </div>
 
@@ -103,6 +106,8 @@ include 'head.php';
                         <table class="table table-borderless align-middle mb-0">
                             <thead style="border-bottom: 2px solid #f0f2f5;">
                                 <tr>
+                                    <th class="text-muted small fw-bold pb-3">NAME</th>
+                                    <th class="text-muted small fw-bold pb-3">DEPARTMENT</th>
                                     <th class="text-muted small fw-bold pb-3">EVENT NAME</th>
                                     <th class="text-muted small fw-bold pb-3">EVENT DATE</th>
                                     <th class="text-muted small fw-bold pb-3">LOCATION</th>
@@ -143,7 +148,9 @@ include 'head.php';
 
                                         $agingClass = ($status == 'Pending' && $interval->d >= 2) ? 'text-danger fw-bold' : 'text-muted';
                                         ?>
-                                        <tr class="request-row" data-status="<?php echo $status; ?>">
+                                        <tr class="request-row">
+                                            <td class="fw-bold text-dark"><?php echo htmlspecialchars($row['firstName'] . ' ' . $row['lastName']); ?></td>
+                                            <td class="text-dark"><?php echo htmlspecialchars($row['departmentName'] ?? 'N/A') . ($row['section_unit'] ? ' / ' . $row['section_unit'] : ''); ?></td>
                                             <td class="fw-bold text-dark"><?php echo htmlspecialchars($row['event_name']); ?></td>
                                             <td class="text-dark"><?php echo $dateFormatted; ?></td>
                                             <td class="text-muted"><?php echo htmlspecialchars($row['location']); ?></td>
@@ -153,25 +160,22 @@ include 'head.php';
                                                 </small>
                                             </td>
                                             <td class="text-end">
-                                                <span class="badge rounded-pill <?php echo $badgeClass; ?> me-2"><?php echo $status; ?></span>
-                                                <form method="POST" class="d-inline">
-                                                    <input type="hidden" name="id" value="<?php echo $row['eventId']; ?>">
-
-                                                    <?php if ($status == 'Pending'): ?>
-                                                        <button type="submit" name="action" value="approve" class="btn btn-sm btn-success me-1" onclick="return confirm('Approve this request?')">Approve</button>
-                                                        <button type="submit" name="action" value="reject" class="btn btn-sm btn-outline-danger" onclick="return confirm('Reject this request?')">Reject</button>
-                                                    <?php elseif ($status == 'Approved'): ?>
-                                                        <button type="submit" name="action" value="return" class="btn btn-sm btn-dark" onclick="return confirm('Mark equipment as returned?')">Mark Returned</button>
-                                                    <?php else: ?>
-                                                        <button disabled class="btn btn-sm btn-light border text-muted">Archived</button>
-                                                    <?php endif; ?>
-                                                </form>
+                                                <button type="button" class="btn btn-sm btn-outline-primary view-btn" 
+                                                    data-bs-toggle="modal" data-bs-target="#viewStarlinkModal"
+                                                    data-id="<?php echo $row['eventId']; ?>"
+                                                    data-ref="<?php echo htmlspecialchars($row['reference_number']); ?>"
+                                                    data-event="<?php echo htmlspecialchars($row['event_name']); ?>"
+                                                    data-location="<?php echo htmlspecialchars($row['location']); ?>"
+                                                    data-date="<?php echo htmlspecialchars($row['event_date']); ?>"
+                                                    data-desc="<?php echo htmlspecialchars($row['description']); ?>">
+                                                    <i class="bi bi-eye me-1"></i>View
+                                                </button>
                                             </td>
                                         </tr>
                                     <?php endwhile; ?>
                                 <?php else: ?>
                                     <tr>
-                                        <td colspan="5" class="text-center py-5 text-muted">No borrowing requests found.</td>
+                                        <td colspan="6" class="text-center py-5 text-muted">No borrowing requests found.</td>
                                     </tr>
                                 <?php endif; ?>
                             </tbody>
@@ -184,27 +188,56 @@ include 'head.php';
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        // Status filter
-        document.querySelectorAll('.status-filter').forEach(button => {
+        // View button modal
+        let currentEventId = null;
+        document.querySelectorAll('.view-btn').forEach(button => {
             button.addEventListener('click', function() {
-                document.querySelectorAll('.status-filter').forEach(btn => {
-                    btn.classList.remove('active');
-                    btn.classList.add('btn-outline-secondary');
-                    btn.classList.remove('btn-secondary');
-                });
-                this.classList.add('active');
-                this.classList.remove('btn-outline-secondary');
-                this.classList.add('btn-secondary');
+                currentEventId = this.dataset.id;
+                document.getElementById('modalRef').textContent = this.dataset.ref;
+                document.getElementById('modalEvent').textContent = this.dataset.event;
+                document.getElementById('modalDate').textContent = new Date(this.dataset.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                document.getElementById('modalLocation').textContent = this.dataset.location;
+                document.getElementById('modalDesc').textContent = this.dataset.desc || 'No description provided.';
+            });
+        });
 
-                const status = this.dataset.status;
-                document.querySelectorAll('.request-row').forEach(row => {
-                    if (status === 'all' || row.dataset.status === status) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
+        // Accept button
+        document.getElementById('modalAcceptBtn').addEventListener('click', function() {
+            Swal.fire({
+                title: 'Accept this request?',
+                text: 'The request will be marked as Approved.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#198754',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, accept it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('formAction').value = 'approve';
+                    document.getElementById('formId').value = currentEventId;
+                    document.getElementById('actionForm').submit();
+                }
+            });
+        });
+
+        // Reject button
+        document.getElementById('modalRejectBtn').addEventListener('click', function() {
+            Swal.fire({
+                title: 'Reject this request?',
+                text: 'The request will be marked as Rejected.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, reject it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('formAction').value = 'reject';
+                    document.getElementById('formId').value = currentEventId;
+                    document.getElementById('actionForm').submit();
+                }
             });
         });
 
@@ -249,6 +282,56 @@ include 'head.php';
             }
         });
     </script>
+
+    <!-- View Starlink Modal -->
+    <div class="modal fade" id="viewStarlinkModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold text-dark"><i class="bi bi-router-fill me-2"></i>Starlink Request Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="small text-muted fw-bold text-uppercase">Reference Number</label>
+                        <div id="modalRef" class="fw-bold text-dark"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="small text-muted fw-bold text-uppercase">Event Name</label>
+                        <div id="modalEvent" class="fw-bold text-dark"></div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="small text-muted fw-bold text-uppercase">Event Date</label>
+                            <div id="modalDate" class="text-dark"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="small text-muted fw-bold text-uppercase">Location</label>
+                            <div id="modalLocation" class="text-dark"></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="small text-muted fw-bold text-uppercase">Description / Remarks</label>
+                        <div id="modalDesc" class="p-3 bg-light border rounded text-dark" style="min-height: 80px;"></div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-success" id="modalAcceptBtn">
+                        <i class="bi bi-check-circle me-1"></i>Accept
+                    </button>
+                    <button type="button" class="btn btn-danger" id="modalRejectBtn">
+                        <i class="bi bi-x-circle me-1"></i>Reject
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form id="actionForm" method="POST" style="display: none;">
+        <input type="hidden" name="action" id="formAction">
+        <input type="hidden" name="id" id="formId">
+    </form>
+
 </body>
 
 </html>

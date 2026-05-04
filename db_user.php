@@ -9,12 +9,6 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'User') {
 
 $userId = $_SESSION['user_id'];
 
-if (isset($_SESSION['pending_completion'])) {
-    $pendingTicketId = $_SESSION['pending_completion'];
-    unset($_SESSION['pending_completion']);
-    $showSurveyModal = true;
-}
-
 $stmtSig = $pdo->prepare("SELECT signature FROM users WHERE userId = ?");
 $stmtSig->execute([$userId]);
 $currentSignature = $stmtSig->fetchColumn();
@@ -237,36 +231,6 @@ function formatTimeAgo($datetime)
             });
         });
     </script>
-
-    <?php if (isset($showSurveyModal) && $showSurveyModal): ?>
-    <div class="modal fade" id="surveyModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 shadow-lg rounded-4">
-                <div class="modal-header border-0">
-                    <h5 class="modal-title fw-bold text-dark"><i class="bi bi-star-fill text-warning me-2"></i>Rate Our Service</h5>
-                </div>
-                <div class="modal-body text-center py-4">
-                    <p class="text-muted mb-4">Please take a moment to rate our service. Your feedback helps us improve.</p>
-                    <div class="mb-4">
-                        <a href="https://forms.office.com/pages/responsepage.aspx?id=gKvjQCQgo0W_dnoHYaJNKZVrGLcKRchGg0_5vlA39MhURDc2OU5GTENEVEw2WlJPU1JYSDRXWVZBVi4u" target="_blank" class="btn btn-success fw-bold px-5 py-2 rounded-3">
-                            <i class="bi bi-clipboard-check me-2"></i>Complete Survey
-                        </a>
-                    </div>
-                    <p class="text-muted small mb-3">After completing the survey, click the button below to confirm.</p>
-                    <a href="complete_ticket.php?ticket_id=<?php echo $pendingTicketId; ?>" class="btn btn-outline-success px-4">
-                        <i class="bi bi-check-circle me-2"></i>Mark as Completed
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var modal = new bootstrap.Modal(document.getElementById('surveyModal'));
-            modal.show();
-        });
-    </script>
-    <?php endif; ?>
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {

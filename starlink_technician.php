@@ -30,6 +30,15 @@ if (isset($_POST['action']) && isset($_POST['id'])) {
     if ($newStatus) {
         $updateStmt = $pdo->prepare("UPDATE starlink SET status = ? WHERE eventId = ?");
         if ($updateStmt->execute([$newStatus, $id])) {
+            if ($newStatus === 'Approved') {
+                $userStmt = $pdo->prepare("SELECT userId, reference_number FROM starlink WHERE eventId = ?");
+                $userStmt->execute([$id]);
+                $request = $userStmt->fetch();
+                if ($request) {
+                    $notifMsg = "Your Starlink request (Ref: {$request['reference_number']}) has been approved.";
+                    $pdo->prepare("INSERT INTO notification (message, userId) VALUES (?, ?)")->execute([$notifMsg, $request['userId']]);
+                }
+            }
             $msg = "Request successfully marked as " . $newStatus;
             $msgType = "alert-success";
         } else {
@@ -103,6 +112,7 @@ include 'head.php';
                         <table class="table table-borderless align-middle mb-0">
                             <thead style="border-bottom: 2px solid #f0f2f5;">
                                 <tr>
+                                    <th class="text-muted small fw-bold pb-3">REF #</th>
                                     <th class="text-muted small fw-bold pb-3">EVENT NAME</th>
                                     <th class="text-muted small fw-bold pb-3">EVENT DATE</th>
                                     <th class="text-muted small fw-bold pb-3">LOCATION</th>
@@ -144,6 +154,7 @@ include 'head.php';
                                         $agingClass = ($status == 'Pending' && $interval->d >= 2) ? 'text-danger fw-bold' : 'text-muted';
                                         ?>
                                         <tr class="request-row" data-status="<?php echo $status; ?>">
+                                            <td class="fw-bold text-dark"><?php echo htmlspecialchars($row['reference_number']); ?></td>
                                             <td class="fw-bold text-dark"><?php echo htmlspecialchars($row['event_name']); ?></td>
                                             <td class="text-dark"><?php echo $dateFormatted; ?></td>
                                             <td class="text-muted"><?php echo htmlspecialchars($row['location']); ?></td>
@@ -158,10 +169,10 @@ include 'head.php';
                                                     <input type="hidden" name="id" value="<?php echo $row['eventId']; ?>">
 
                                                     <?php if ($status == 'Pending'): ?>
-                                                        <button type="submit" name="action" value="approve" class="btn btn-sm btn-success me-1" onclick="return confirm('Approve this request?')">Approve</button>
-                                                        <button type="submit" name="action" value="reject" class="btn btn-sm btn-outline-danger" onclick="return confirm('Reject this request?')">Reject</button>
+                                                        <button type="button" class="btn btn-sm btn-success me-1" onclick="confirmAction(this, 'approve', 'Approve this request?')">Approve</button>
+                                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmAction(this, 'reject', 'Reject this request?')">Reject</button>
                                                     <?php elseif ($status == 'Approved'): ?>
-                                                        <button type="submit" name="action" value="return" class="btn btn-sm btn-dark" onclick="return confirm('Mark equipment as returned?')">Mark Returned</button>
+                                                        <button type="button" class="btn btn-sm btn-dark" onclick="confirmAction(this, 'return', 'Mark equipment as returned?')">Mark Returned</button>
                                                     <?php else: ?>
                                                         <button disabled class="btn btn-sm btn-light border text-muted">Archived</button>
                                                     <?php endif; ?>
@@ -171,7 +182,7 @@ include 'head.php';
                                     <?php endwhile; ?>
                                 <?php else: ?>
                                     <tr>
-                                        <td colspan="5" class="text-center py-5 text-muted">No borrowing requests found.</td>
+                                        <td colspan="6" class="text-center py-5 text-muted">No borrowing requests found.</td>
                                     </tr>
                                 <?php endif; ?>
                             </tbody>
@@ -184,7 +195,31 @@ include 'head.php';
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
+        // SweetAlert2 confirm action
+        function confirmAction(button, action, text) {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: text,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#198754',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, proceed!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const form = button.closest('form');
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'action';
+                    input.value = action;
+                    form.appendChild(input);
+                    form.submit();
+                }
+            });
+        }
+
         // Status filter
         document.querySelectorAll('.status-filter').forEach(button => {
             button.addEventListener('click', function() {

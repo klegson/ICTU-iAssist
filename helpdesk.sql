@@ -450,7 +450,10 @@ CREATE TABLE `ticket` (
   `updatedAt` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `assignedTo` int DEFAULT NULL,
   `categoryId` int DEFAULT NULL,
-  `technician_signature` longtext COLLATE utf8mb4_general_ci
+  `technician_signature` longtext COLLATE utf8mb4_general_ci,
+  `resolvedBy` int DEFAULT NULL,
+  `resolvedAt` datetime DEFAULT NULL,
+  `completedAt` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -629,12 +632,13 @@ ALTER TABLE `ticket`
 ALTER TABLE `users`
   ADD CONSTRAINT `fk_users_department` FOREIGN KEY (`departmentId`) REFERENCES `department` (`departmentId`) ON DELETE RESTRICT ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_users_position` FOREIGN KEY (`positionID`) REFERENCES `position` (`positionID`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
 --
 -- Constraints for table `department`
 --
+
 ALTER TABLE `department`
   ADD CONSTRAINT `fk_department_position` FOREIGN KEY (`positionID`) REFERENCES `position` (`positionID`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

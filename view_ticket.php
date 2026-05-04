@@ -13,17 +13,19 @@ $role = $_SESSION['role'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['complete_ticket'])) {
     $_SESSION['pending_completion'] = $ticketId;
-    header("Location: db_user.php?pending_completion=1");
+    header("Location: view_ticket.php?id=" . $ticketId);
     exit;
 }
+
+$showSurveyModal = isset($_SESSION['pending_completion']) && $_SESSION['pending_completion'] == $ticketId;
 
 $sql = "SELECT t.*, u.firstName, u.lastName, u.email, d.departmentName, c.categoryName,
         tech.firstName AS techFirstName, tech.lastName AS techLastName
         FROM ticket t 
         JOIN users u ON t.userId = u.userId 
         LEFT JOIN department d ON u.departmentId = d.departmentId
-        LEFT JOIN category c ON t.categoryId = c.categoryId 
-        LEFT JOIN users tech ON t.resolvedBy = tech.userId
+        LEFT JOIN category c ON t.categoryId = c.categoryId
+        LEFT JOIN users tech ON t.assignedTo = tech.userId
         WHERE t.ticketId = ?";
 
 if ($role === 'User') {
@@ -52,6 +54,36 @@ include 'head.php';
 
 <body>
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <?php if (isset($showSurveyModal) && $showSurveyModal): ?>
+    <div class="modal fade" id="surveyModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold text-dark"><i class="bi bi-star-fill text-warning me-2"></i>Rate Our Service</h5>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <p class="text-muted mb-4">Please take a moment to complete the survey. Your feedback helps us improve.</p>
+                    <div class="mb-4">
+                        <a href="https://forms.office.com/pages/responsepage.aspx?id=gKvjQCQgo0W_dnoHYaJNKZVrGLcKRchGg0_5vlA39MhURDc2OU5GTENEVEw2WlJPU1JYSDRXWVZBVi4u" target="_blank" class="btn btn-success fw-bold px-5 py-2 rounded-3">
+                            <i class="bi bi-clipboard-check me-2"></i>Complete Survey
+                        </a>
+                    </div>
+                    <p class="text-muted small mb-3">After completing the survey, click the button below to confirm.</p>
+                    <a href="complete_ticket.php?ticket_id=<?php echo $ticketId; ?>" class="btn btn-outline-success px-4">
+                        <i class="bi bi-check-circle me-2"></i>Confirm Completion
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var modal = new bootstrap.Modal(document.getElementById('surveyModal'));
+            modal.show();
+        });
+    </script>
+    <?php endif; ?>
 
     <div class="d-flex flex-column flex-md-row" style="min-height: 100vh;">
         <div style="width: 280px; flex-shrink: 0;"></div>
@@ -95,10 +127,10 @@ include 'head.php';
                                             <div class="fw-bold text-dark"><?php echo date("F d, Y \a\\t h:i A", strtotime($ticket['resolvedAt'])); ?></div>
                                         </div>
                                     <?php endif; ?>
-
                                 </div>
                             </div>
                         <?php endif; ?>
+
                     </div>
 
                     <div class="col-lg-4">
@@ -166,7 +198,7 @@ include 'head.php';
                             </div>
                         </div>
 
-                        <?php if ($ticket['status'] === 'Resolved' && $role === 'User'): ?>
+                         <?php if ($ticket['status'] === 'Resolved' && $role === 'User'): ?>
                             <div class="card border-0 shadow-sm rounded-4 p-4 text-center" style="background-color: #f8f9fa; border: 2px dashed #198754 !important;">
                                 <div class="mb-3 text-success">
                                     <i class="bi bi-check2-circle" style="font-size: 3rem;"></i>
@@ -181,7 +213,6 @@ include 'head.php';
                                 </form>
                             </div>
                         <?php endif; ?>
-
                     </div>
                 </div>
             </div>
@@ -192,25 +223,25 @@ include 'head.php';
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const sidebarToggle = document.getElementById('sidebarToggle');
-        const sidebarContainer = document.querySelector('.sidebar-container');
-        const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const sidebarContainer = document.querySelector('.sidebar-container');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
 
-        if (sidebarToggle && sidebarContainer && sidebarOverlay) {
-            sidebarToggle.addEventListener('click', function() {
-                sidebarContainer.classList.toggle('show');
-                sidebarOverlay.classList.toggle('show');
-            });
+    if (sidebarToggle && sidebarContainer && sidebarOverlay) {
+        sidebarToggle.addEventListener('click', function() {
+            sidebarContainer.classList.toggle('show');
+            sidebarOverlay.classList.toggle('show');
+        });
 
-            sidebarOverlay.addEventListener('click', function() {
-                sidebarContainer.classList.remove('show');
-                sidebarOverlay.classList.remove('show');
-            });
-        }
+        sidebarOverlay.addEventListener('click', function() {
+            sidebarContainer.classList.remove('show');
+            sidebarOverlay.classList.remove('show');
+        });
+    }
 
     if (window.innerWidth <= 768) {
         document.querySelectorAll('.sidebar-container .nav-link').forEach(function(link) {
             link.addEventListener('click', function() {
-                    sidebarContainer.classList.remove('show');
+                sidebarContainer.classList.remove('show');
                 sidebarOverlay.classList.remove('show');
             });
         });
@@ -219,5 +250,4 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 </body>
-
 </html>
