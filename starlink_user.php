@@ -89,7 +89,6 @@ include 'head.php';
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <div class="d-flex flex-column flex-md-row" style="min-height: 100vh;">
-        <div style="width: 280px; flex-shrink: 0;"></div>
         <?php include 'sidebar.php'; ?>
 
         <div class="flex-grow-1 main-content" style="min-height: 100vh; overflow-y: auto;">

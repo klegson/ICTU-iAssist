@@ -14,9 +14,6 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'User') {
 $userId = $_SESSION['user_id'];
 $msg = "";
 
-$techStmt = $pdo->query("SELECT userId, firstName, lastName FROM users WHERE role = 'Technician' AND isApproved = 1 ORDER BY firstName ASC");
-$technicians = $techStmt->fetchAll();
-
 if (isset($_POST['submit_account'])) {
     $serviceType = $_POST['categoryId'];
     $reason = trim($_POST['reason']);
@@ -52,12 +49,11 @@ if (isset($_POST['submit_account'])) {
             $userDeptId = 1;
         }
 
-        $stmt = $pdo->prepare("INSERT INTO ticket (subject, categoryId, description, priority, status, departmentId, userId, assignedTo) VALUES (?, ?, ?, ?, 'Pending', ?, ?, ?)");
+        $stmt = $pdo->prepare("INSERT INTO ticket (subject, categoryId, description, priority, status, departmentId, userId) VALUES (?, ?, ?, ?, 'Pending', ?, ?)");
 
         $subject = "Account Request (" . $systemList . ")";
-        $assignedTo = $_POST['technician_id'] ?? null;
 
-        if ($stmt->execute([$subject, $serviceType, $finalDescription, $priority, $_SESSION['department_id'], $userId, $assignedTo])) {
+        if ($stmt->execute([$subject, $serviceType, $finalDescription, $priority, $_SESSION['department_id'], $userId])) {
             header("Location: db_user.php?msg=success");
             exit;
         } else {
@@ -74,7 +70,6 @@ include 'head.php';
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <div class="d-flex flex-column flex-md-row" style="min-height: 100vh;">
-        <div style="width: 280px; flex-shrink: 0;"></div>
         <?php include 'sidebar.php'; ?>
 
         <div class="flex-grow-1 main-content" style="min-height: 100vh; overflow-y: auto;">
@@ -91,7 +86,7 @@ include 'head.php';
                 <div class="custom-card p-5 col-xl-9">
                     <form method="POST">
                         <div class="row mb-4">
-                            <div class="col-md-6">
+                            <div class="col-md-12">
                                 <label class="form-label small fw-bold">ACTION REQUIRED</label>
                                 <select class="form-select" name="categoryId" id="actionSelect" onchange="toggleTransfer()" required>
                                     <option value="" selected disabled>Select Action...</option>
@@ -102,17 +97,6 @@ include 'head.php';
                                         echo "<option value='" . $cat['categoryId'] . "'>" . htmlspecialchars($cat['categoryName']) . "</option>";
                                     }
                                     ?>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label small fw-bold">ASSIGN TO TECHNICIAN</label>
-                                <select class="form-select" name="technician_id">
-                                    <option value="" selected>Auto-assign (Officer reviews)</option>
-                                    <?php foreach ($technicians as $tech): ?>
-                                        <option value="<?php echo $tech['userId']; ?>">
-                                            <?php echo htmlspecialchars($tech['firstName'] . ' ' . $tech['lastName']); ?>
-                                        </option>
-                                    <?php endforeach; ?>
                                 </select>
                             </div>
                         </div>
