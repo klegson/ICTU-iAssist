@@ -175,7 +175,7 @@ function formatTimeAgo($datetime)
                                         JOIN users u ON t.userId = u.userId
                                         LEFT JOIN department d ON u.departmentId = d.departmentId
                                         LEFT JOIN category c ON t.categoryId = c.categoryId
-                                        WHERE t.status = 'Pending' AND (c.categoryType != 'Account Services' OR c.categoryType IS NULL)
+                                        WHERE t.status = 'Pending' AND (c.categoryType != 'Account Services' OR c.categoryType IS NULL) AND t.priority != 'Express'
                                         ORDER BY t.createdAt ASC";
 
                                 $stmt = $pdo->query($sql);

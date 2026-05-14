@@ -15,7 +15,8 @@ body {
 /* Login Page */
 body.login-body {
     background-color: #e9ecef;
-    height: 100vh;
+    min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -37,6 +38,31 @@ body.login-body {
     display: block;
     margin-left: auto;
     margin-right: auto;
+}
+
+@media (max-width: 400px) {
+    .login-card {
+        padding: 16px 12px;
+        margin: 10px;
+    }
+
+    .login-card h4 {
+        font-size: 1.1rem;
+    }
+
+    .login-card .deped-logo {
+        width: 70px;
+    }
+
+    .login-card .form-control {
+        padding: 10px 12px;
+        font-size: 0.9rem;
+    }
+
+    .login-card .btn-deped {
+        padding: 10px 16px;
+        font-size: 0.85rem;
+    }
 }
 
 /* Header */
@@ -212,6 +238,11 @@ body.login-body {
     color: #155724;
 }
 
+.bg-express {
+    background-color: #fd7e14 !important;
+    color: white;
+}
+
 /* Sidebar Wrapper */
 @media (max-width: 768px) {
     .sidebar-container {
@@ -302,6 +333,28 @@ body.login-body {
         padding: 8px 16px;
         font-size: 0.9rem;
     }
+
+    .stat-card .display-4 {
+        font-size: 2rem;
+    }
+
+    .table td.py-3 {
+        padding-top: 0.7rem !important;
+        padding-bottom: 0.7rem !important;
+    }
+
+    .card.p-4,
+    .custom-card.p-4 {
+        padding: 1rem !important;
+    }
+
+    .mb-5 {
+        margin-bottom: 1.5rem !important;
+    }
+
+    .text-end .btn-sm {
+        margin-bottom: 0.25rem;
+    }
 }
 
 @media (max-width: 576px) {
@@ -324,6 +377,28 @@ body.login-body {
 
     .dropdown-menu {
         width: 300px !important;
+    }
+
+    .db-user-heading .btn {
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+
+    .db-user-heading .text-end {
+        text-align: left !important;
+    }
+
+    .stat-card .display-4 {
+        font-size: 1.75rem;
+    }
+
+    .stat-card i.fs-4 {
+        font-size: 1.25rem !important;
+    }
+
+    .table td.py-3 {
+        padding-top: 0.5rem !important;
+        padding-bottom: 0.5rem !important;
     }
 }
 

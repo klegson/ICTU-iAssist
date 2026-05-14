@@ -4,7 +4,7 @@ header("Cache-Control: post-check=0, pre-check=0", false);
 header("Pragma: no-cache");
 session_start();
 
-if (!isset($_SESSION['user_id'])) {
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'User') {
     header("Location: index.php");
     exit;
 }
@@ -39,21 +39,20 @@ if (isset($_POST['submit_ticket'])) {
 
     $stmt = $pdo->prepare($sql);
 
-    if ($stmt->execute([$subject, $categoryId, $description, $priority, $userId, $userDeptId])) {
+        if ($stmt->execute([$subject, $categoryId, $description, $priority, $userId, $userDeptId])) {
 
-        $newTicketId = $pdo->lastInsertId();
-        $notifMsg = "A new ticket (#{$newTicketId}) has been submitted and requires review.";
+            $newTicketId = $pdo->lastInsertId();
+            $notifMsg = "A new ticket (#{$newTicketId}) has been submitted and requires review.";
+            $officers = $pdo->query("SELECT userId FROM users WHERE role = 'Officer'")->fetchAll();
+            foreach ($officers as $off) {
+                $pdo->prepare("INSERT INTO notification (message, userId) VALUES (?, ?)")->execute([$notifMsg, $off['userId']]);
+            }
 
-        $officers = $pdo->query("SELECT userId FROM users WHERE role = 'Officer'")->fetchAll();
-        foreach ($officers as $off) {
-            $pdo->prepare("INSERT INTO notification (message, userId) VALUES (?, ?)")->execute([$notifMsg, $off['userId']]);
+            header("Location: db_user.php?msg=success");
+            exit;
+        } else {
+            $msg = "Error creating ticket.";
         }
-
-        header("Location: db_user.php?msg=success");
-        exit;
-    } else {
-        $msg = "Error creating ticket.";
-    }
 }
 
 $pageTitle = 'Submit New Ticket';
@@ -91,8 +90,8 @@ include 'head.php';
                                 <select class="form-select" name="categoryId" id="categorySelect" required>
                                     <option value="" selected disabled>Select a Category...</option>
                                     <?php
-                                    $sql = "SELECT * FROM category 
-                                            WHERE categoryType != 'Account Services' 
+                                    $sql = "SELECT * FROM category
+                                            WHERE categoryType != 'Account Services'
                                             ORDER BY FIELD(categoryType, 'Hardware Problems', 'Software Problems', 'Network Problems', 'Others'), categoryName";
                                     $stmt = $pdo->query($sql);
                                     $currentGroup = "";
@@ -103,13 +102,14 @@ include 'head.php';
                                             $currentGroup = $cat['categoryType'];
                                             echo "<optgroup label='" . htmlspecialchars($currentGroup) . "'>";
                                         }
-                                        echo "<option value='" . $cat['categoryId'] . "'>" . htmlspecialchars($cat['categoryName']) . "</option>";
+                                        $expressAttr = $cat['is_express_eligible'] ? 'data-express-eligible="1"' : 'data-express-eligible="0"';
+                                        echo "<option value='" . $cat['categoryId'] . "' $expressAttr>" . htmlspecialchars($cat['categoryName']) . "</option>";
                                     }
                                     if ($currentGroup !== "") echo "</optgroup>";
                                     ?>
                                 </select>
 
-                                <div id="manualContainer" style="display: none;" class="mt-3">
+                                 <div id="manualContainer" style="display: none;" class="mt-3">
                                     <label class="form-label small fw-bold">SPECIFY CATEGORY</label>
                                     <input type="text" class="form-control" name="manual_category" id="manualCategoryInput" placeholder="Type your custom category...">
                                 </div>

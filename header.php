@@ -28,7 +28,7 @@ if (isset($_SESSION['user_id']) && isset($pdo)) {
 ?>
 <nav class="navbar navbar-expand-lg header-deped shadow-sm">
     <div class="container-fluid px-4">
-        <button class="mobile-sidebar-toggle border-0 bg-transparent me-2" type="button" id="sidebarToggle" style="display: none;">
+        <button class="mobile-sidebar-toggle border-0 bg-transparent me-2" type="button" id="sidebarToggle">
             <i class="bi bi-list fs-4 text-white"></i>
         </button>
 

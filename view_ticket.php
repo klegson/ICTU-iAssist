@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once 'db.php';
+require_once 'credential_helper.php';
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: index.php");
@@ -56,33 +57,33 @@ include 'head.php';
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <?php if (isset($showSurveyModal) && $showSurveyModal): ?>
-    <div class="modal fade" id="surveyModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 shadow-lg rounded-4">
-                <div class="modal-header border-0">
-                    <h5 class="modal-title fw-bold text-dark"><i class="bi bi-star-fill text-warning me-2"></i>Rate Our Service</h5>
-                </div>
-                <div class="modal-body text-center py-4">
-                    <p class="text-muted mb-4">Please take a moment to complete the survey. Your feedback helps us improve.</p>
-                    <div class="mb-4">
-                        <a href="https://forms.office.com/pages/responsepage.aspx?id=gKvjQCQgo0W_dnoHYaJNKZVrGLcKRchGg0_5vlA39MhURDc2OU5GTENEVEw2WlJPU1JYSDRXWVZBVi4u" target="_blank" class="btn btn-success fw-bold px-5 py-2 rounded-3">
-                            <i class="bi bi-clipboard-check me-2"></i>Complete Survey
+        <div class="modal fade" id="surveyModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg rounded-4">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title fw-bold text-dark"><i class="bi bi-star-fill text-warning me-2"></i>Rate Our Service</h5>
+                    </div>
+                    <div class="modal-body text-center py-4">
+                        <p class="text-muted mb-4">Please take a moment to complete the survey. Your feedback helps us improve.</p>
+                        <div class="mb-4">
+                            <a href="https://forms.office.com/pages/responsepage.aspx?id=gKvjQCQgo0W_dnoHYaJNKZVrGLcKRchGg0_5vlA39MhURDc2OU5GTENEVEw2WlJPU1JYSDRXWVZBVi4u" target="_blank" class="btn btn-success fw-bold px-5 py-2 rounded-3">
+                                <i class="bi bi-clipboard-check me-2"></i>Complete Survey
+                            </a>
+                        </div>
+                        <p class="text-muted small mb-3">After completing the survey, click the button below to confirm.</p>
+                        <a href="complete_ticket.php?ticket_id=<?php echo $ticketId; ?>" class="btn btn-outline-success px-4">
+                            <i class="bi bi-check-circle me-2"></i>Confirm Completion
                         </a>
                     </div>
-                    <p class="text-muted small mb-3">After completing the survey, click the button below to confirm.</p>
-                    <a href="complete_ticket.php?ticket_id=<?php echo $ticketId; ?>" class="btn btn-outline-success px-4">
-                        <i class="bi bi-check-circle me-2"></i>Confirm Completion
-                    </a>
                 </div>
             </div>
         </div>
-    </div>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var modal = new bootstrap.Modal(document.getElementById('surveyModal'));
-            modal.show();
-        });
-    </script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                var modal = new bootstrap.Modal(document.getElementById('surveyModal'));
+                modal.show();
+            });
+        </script>
     <?php endif; ?>
 
     <div class="d-flex flex-column flex-md-row" style="min-height: 100vh;">
@@ -125,6 +126,56 @@ include 'head.php';
                                             <div class="small text-muted fst-italic">Remarks posted on:</div>
                                             <div class="fw-bold text-dark"><?php echo date("F d, Y \a\\t h:i A", strtotime($ticket['resolvedAt'])); ?></div>
                                         </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php
+                        $credStmt = $pdo->prepare("SELECT * FROM ticket_credentials WHERE ticketId = ? ORDER BY system_name");
+                        $credStmt->execute([$ticketId]);
+                        $credentials = $credStmt->fetchAll();
+
+                        if (!empty($credentials)):
+                            $allExpired = true;
+                            foreach ($credentials as $cred) {
+                                if (!credentialsExpired($cred['created_at'])) {
+                                    $allExpired = false;
+                                    break;
+                                }
+                            }
+                        ?>
+                            <div class="card border-0 shadow-sm rounded-4 mt-4" id="credentials" style="border-top: 4px solid #0d6efd !important;">
+                                <div class="card-body p-4 p-md-5">
+                                    <?php if ($allExpired): ?>
+                                        <div class="text-center py-4">
+                                            <i class="bi bi-clock-history text-muted" style="font-size: 2.5rem;"></i>
+                                            <p class="text-muted mt-3 mb-0">These credentials have expired. Please contact the help desk for assistance.</p>
+                                        </div>
+                                    <?php else: ?>
+                                        <h6 class="fw-bold mb-4 text-primary"><i class="bi bi-key-fill me-2"></i>Account Credentials</h6>
+                                        <div class="alert alert-warning py-2 mb-3 small"><i class="bi bi-exclamation-triangle me-1"></i>Credentials auto-expire <strong>10 days</strong> after creation. Click the eye icon to reveal passwords.</div>
+                                        <?php foreach ($credentials as $cred):
+                                            if (credentialsExpired($cred['created_at'])) continue;
+                                        ?>
+                                            <div class="border rounded-3 p-3 mb-3 bg-light">
+                                                <div class="row align-items-center g-2">
+                                                    <div class="col-md-3 fw-bold small"><?= htmlspecialchars($cred['system_name']) ?></div>
+                                                    <div class="col-md-4 small"><?= htmlspecialchars($cred['username']) ?></div>
+                                                    <div class="col-md-3">
+                                                        <div class="input-group input-group-sm">
+                                                            <input type="password" class="form-control border-end-0" value="<?= htmlspecialchars(decryptPassword($cred['password_encrypted'])) ?>" readonly id="vpw-<?= $cred['credentialId'] ?>">
+                                                            <button class="btn btn-white border" type="button" onclick="togglePassword('vpw-<?= $cred['credentialId'] ?>', this)"><i class="bi bi-eye"></i></button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-2 text-end">
+                                                        <span class="badge rounded-pill bg-secondary bg-opacity-10 text-dark fw-normal px-2">
+                                                            Exp: <?= date("M d", strtotime($cred['created_at'] . ' +10 days')) ?>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        <?php endforeach; ?>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -197,7 +248,7 @@ include 'head.php';
                             </div>
                         </div>
 
-                         <?php if ($ticket['status'] === 'Resolved' && $role === 'User'): ?>
+                        <?php if ($ticket['status'] === 'Resolved' && $role === 'User'): ?>
                             <div class="card border-0 shadow-sm rounded-4 p-4 text-center" style="background-color: #f8f9fa; border: 2px dashed #198754 !important;">
                                 <div class="mb-3 text-success">
                                     <i class="bi bi-check2-circle" style="font-size: 3rem;"></i>
@@ -218,35 +269,49 @@ include 'head.php';
         </div>
     </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const sidebarToggle = document.getElementById('sidebarToggle');
-    const sidebarContainer = document.querySelector('.sidebar-container');
-    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function togglePassword(inputId, btn) {
+            var input = document.getElementById(inputId);
+            var icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'bi bi-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'bi bi-eye';
+            }
+        }
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebarContainer = document.querySelector('.sidebar-container');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
 
-    if (sidebarToggle && sidebarContainer && sidebarOverlay) {
-        sidebarToggle.addEventListener('click', function() {
-            sidebarContainer.classList.toggle('show');
-            sidebarOverlay.classList.toggle('show');
-        });
+            if (sidebarToggle && sidebarContainer && sidebarOverlay) {
+                sidebarToggle.addEventListener('click', function() {
+                    sidebarContainer.classList.toggle('show');
+                    sidebarOverlay.classList.toggle('show');
+                });
 
-        sidebarOverlay.addEventListener('click', function() {
-            sidebarContainer.classList.remove('show');
-            sidebarOverlay.classList.remove('show');
-        });
-    }
+                sidebarOverlay.addEventListener('click', function() {
+                    sidebarContainer.classList.remove('show');
+                    sidebarOverlay.classList.remove('show');
+                });
+            }
 
-    if (window.innerWidth <= 768) {
-        document.querySelectorAll('.sidebar-container .nav-link').forEach(function(link) {
-            link.addEventListener('click', function() {
-                sidebarContainer.classList.remove('show');
-                sidebarOverlay.classList.remove('show');
-            });
+            if (window.innerWidth <= 768) {
+                document.querySelectorAll('.sidebar-container .nav-link').forEach(function(link) {
+                    link.addEventListener('click', function() {
+                        sidebarContainer.classList.remove('show');
+                        sidebarOverlay.classList.remove('show');
+                    });
+                });
+            }
         });
-    }
-});
-</script>
+    </script>
 
 </body>
+
 </html>

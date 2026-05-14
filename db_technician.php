@@ -47,6 +47,31 @@ if (isset($_POST['ticket_action'])) {
             header("Location: db_technician.php");
             exit;
         }
+    } elseif ($action === 'grab_express') {
+        $sql = "UPDATE ticket SET assignedTo = ?, status = 'Processing', updatedAt = NOW() WHERE ticketId = ? AND priority = 'Express' AND assignedTo IS NULL AND status = 'Pending'";
+        $stmt = $pdo->prepare($sql);
+        if ($stmt->execute([$techId, $ticketId])) {
+            $_SESSION['flash_msg'] = "Express ticket #$ticketId grabbed! You may begin working on it.";
+            $_SESSION['flash_type'] = "success";
+            header("Location: db_technician.php");
+            exit;
+        }
+    } elseif ($action === 'release_express') {
+        $reason = trim($_POST['release_reason'] ?? '');
+        if (empty($reason)) {
+            $_SESSION['flash_msg'] = "Release reason is required.";
+            $_SESSION['flash_type'] = "error";
+            header("Location: db_technician.php");
+            exit;
+        }
+        $sql = "UPDATE ticket SET assignedTo = NULL, status = 'Pending', release_reason = ?, released_at = NOW(), updatedAt = NOW() WHERE ticketId = ? AND assignedTo = ? AND priority = 'Express'";
+        $stmt = $pdo->prepare($sql);
+        if ($stmt->execute([$reason, $ticketId, $techId])) {
+            $_SESSION['flash_msg'] = "Express ticket #$ticketId released back to the pool.";
+            $_SESSION['flash_type'] = "warning";
+            header("Location: db_technician.php");
+            exit;
+        }
     }
 }
 ?>
@@ -67,6 +92,69 @@ if (isset($_POST['ticket_action'])) {
                 <div class="mb-5">
                     <h2 class="fw-bold text-dark mb-1"><i class="bi bi-tools text-primary me-2"></i>My Work Orders</h2>
                     <p class="text-muted">Manage your assigned tickets and active tasks.</p>
+                </div>
+
+                <div class="custom-card shadow-sm border-0 p-4 mb-5" style="border-top: 5px solid #fd7e14 !important;">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-bold text-dark mb-0"><i class="bi bi-lightning-fill me-2 text-warning"></i>Express Lane - Available Tickets</h5>
+                        <a href="create_express_ticket.php" class="btn btn-warning fw-bold">
+                            <i class="bi bi-lightning-fill me-2"></i>Create Express Ticket
+                        </a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-borderless align-middle mb-0">
+                            <thead style="border-bottom: 2px solid #f0f2f5;">
+                                <tr>
+                                    <th class="text-muted small fw-bold pb-3">TICKET ID</th>
+                                    <th class="text-muted small fw-bold pb-3">DATE REQUESTED</th>
+                                    <th class="text-muted small fw-bold pb-3">SUBJECT</th>
+                                    <th class="text-muted small fw-bold pb-3">CATEGORY</th>
+                                    <th class="text-muted small fw-bold pb-3">DEPARTMENT</th>
+                                    <th class="text-muted small fw-bold pb-3">PRIORITY</th>
+                                    <th class="text-end text-muted small fw-bold pb-3">ACTION</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php
+                                $sqlExpress = "SELECT t.*, d.departmentName, c.categoryName
+                                        FROM ticket t
+                                        LEFT JOIN users u ON t.userId = u.userId
+                                        LEFT JOIN department d ON u.departmentId = d.departmentId
+                                        LEFT JOIN category c ON t.categoryId = c.categoryId
+                                        WHERE t.priority = 'Express' AND t.status = 'Pending' AND t.assignedTo IS NULL
+                                        ORDER BY t.createdAt DESC";
+
+                                $stmtExpress = $pdo->query($sqlExpress);
+
+                                if ($stmtExpress->rowCount() > 0) {
+                                    while ($row = $stmtExpress->fetch()) {
+                                        $exactDate = date("M d, Y", strtotime($row['createdAt']));
+                                        $aging = formatTimeAgo($row['createdAt']);
+                                        $agingColor = (strpos($aging, 'd') !== false) ? 'text-danger' : 'text-muted';
+
+                                        echo "<tr style='border-bottom: 1px solid #f8f9fa;'>";
+                                        echo "<td class='py-3 fw-bold text-muted'>#" . $row['ticketId'] . "</td>";
+                                        echo "<td class='py-3'>
+                                                <span class='d-block fs-6'>" . $exactDate . "</span>
+                                                <small class='fw-bold " . $agingColor . "'><i class='bi bi-clock-history me-1'></i>" . $aging . "</small>
+                                              </td>";
+                                        echo "<td class='py-3 text-dark fw-bold'>" . htmlspecialchars(substr($row['subject'], 0, 30)) . "...</td>";
+                                        echo "<td class='py-3'><span class='small text-muted'>" . htmlspecialchars($row['categoryName'] ?? 'General') . "</span></td>";
+                                        echo "<td class='py-3'><span class='badge bg-light text-dark border'>" . htmlspecialchars($row['departmentName'] ?? 'Unknown') . "</span></td>";
+                                        echo "<td class='py-3'><span class='badge bg-express'>Express</span></td>";
+                                        echo "<td class='py-3 text-end'>";
+                                        echo "<form method='POST' class='m-0'>";
+                                        echo "<input type='hidden' name='ticket_id' value='" . $row['ticketId'] . "'>";
+                                        echo "<button type='submit' name='ticket_action' value='grab_express' class='btn btn-sm btn-warning fw-bold'><i class='bi bi-lightning-fill me-1'></i>Grab Ticket</button>";
+                                        echo "</form></td></tr>";
+                                    }
+                                } else {
+                                    echo "<tr><td colspan='7' class='text-center py-4 text-muted'>No available Express Lane tickets.</td></tr>";
+                                }
+                                ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <div class="custom-card shadow-sm border-0 p-4 mb-5 border-top-info">
@@ -92,10 +180,10 @@ if (isset($_POST['ticket_action'])) {
                                         JOIN users u ON t.userId = u.userId
                                         LEFT JOIN department d ON u.departmentId = d.departmentId
                                         LEFT JOIN category c ON t.categoryId = c.categoryId
-                                        WHERE t.assignedTo = ? AND t.status = 'Pending'
+                                        WHERE t.assignedTo = ? AND t.status IN ('Pending', 'Processing')
                                         AND (c.categoryType != 'Account Services' OR c.categoryType IS NULL)
-                                        ORDER BY 
-                                            CASE t.priority WHEN 'High' THEN 1 WHEN 'Medium' THEN 2 WHEN 'Low' THEN 3 ELSE 4 END ASC, 
+                                        ORDER BY
+                                            CASE t.priority WHEN 'High' THEN 1 WHEN 'Medium' THEN 2 WHEN 'Low' THEN 3 ELSE 4 END ASC,
                                             t.updatedAt DESC";
 
                                 $stmtTech = $pdo->prepare($sqlTech);
@@ -105,6 +193,7 @@ if (isset($_POST['ticket_action'])) {
                                     while ($row = $stmtTech->fetch()) {
                                         $prioClass = match ($row['priority']) {
                                             'High' => 'bg-danger',
+                                            'Express' => 'bg-express',
                                             'Medium' => 'bg-warning text-dark',
                                             'Low' => 'bg-success',
                                             default => 'bg-secondary'
@@ -135,7 +224,9 @@ if (isset($_POST['ticket_action'])) {
                                         echo "<form method='POST' class='m-0 d-flex justify-content-end gap-1'>";
                                         echo "<input type='hidden' name='ticket_id' value='" . $row['ticketId'] . "'>";
                                         echo "<a href='manage_ticket.php?id=" . $row['ticketId'] . "' class='btn btn-sm btn-light border fw-bold text-primary'>View</a>";
-                                        if ($row['status'] == 'Pending') {
+                                        if ($row['priority'] === 'Express' && $row['status'] == 'Processing') {
+                                            echo "<button type='button' class='btn btn-sm btn-outline-warning fw-bold btn-release-express' data-id='" . $row['ticketId'] . "'><i class='bi bi-lightning-fill me-1'></i>Release</button>";
+                                        } elseif ($row['status'] == 'Pending') {
                                             echo "<button type='submit' name='ticket_action' value='accept' class='btn btn-sm btn-success fw-bold'><i class='bi bi-check-lg'></i></button>";
                                             echo "<button type='button' class='btn btn-sm btn-outline-danger fw-bold btn-reject' data-id='" . $row['ticketId'] . "'><i class='bi bi-x-lg'></i></button>";
                                         } else {
@@ -175,10 +266,10 @@ if (isset($_POST['ticket_action'])) {
                                         JOIN users u ON t.userId = u.userId
                                         LEFT JOIN department d ON u.departmentId = d.departmentId
                                         LEFT JOIN category c ON t.categoryId = c.categoryId
-                                        WHERE t.assignedTo = ? AND t.status = 'Pending'
+                                        WHERE t.assignedTo = ? AND t.status IN ('Pending', 'Processing')
                                         AND c.categoryType = 'Account Services'
-                                        ORDER BY 
-                                            CASE t.priority WHEN 'High' THEN 1 WHEN 'Medium' THEN 2 WHEN 'Low' THEN 3 ELSE 4 END ASC, 
+                                        ORDER BY
+                                            CASE t.priority WHEN 'High' THEN 1 WHEN 'Medium' THEN 2 WHEN 'Low' THEN 3 ELSE 4 END ASC,
                                             t.updatedAt DESC";
 
                                 $stmtAcc = $pdo->prepare($sqlAcc);
@@ -188,6 +279,7 @@ if (isset($_POST['ticket_action'])) {
                                     while ($row = $stmtAcc->fetch()) {
                                         $prioClass = match ($row['priority']) {
                                             'High' => 'bg-danger',
+                                            'Express' => 'bg-express',
                                             'Medium' => 'bg-warning text-dark',
                                             'Low' => 'bg-success',
                                             default => 'bg-secondary'
@@ -218,7 +310,9 @@ if (isset($_POST['ticket_action'])) {
                                         echo "<form method='POST' class='m-0 d-flex justify-content-end gap-1'>";
                                         echo "<input type='hidden' name='ticket_id' value='" . $row['ticketId'] . "'>";
                                         echo "<a href='manage_ticket.php?id=" . $row['ticketId'] . "' class='btn btn-sm btn-light border fw-bold text-primary'>View</a>";
-                                        if ($row['status'] == 'Pending') {
+                                        if ($row['priority'] === 'Express' && $row['status'] == 'Processing') {
+                                            echo "<button type='button' class='btn btn-sm btn-outline-warning fw-bold btn-release-express' data-id='" . $row['ticketId'] . "'><i class='bi bi-lightning-fill me-1'></i>Release</button>";
+                                        } elseif ($row['status'] == 'Pending') {
                                             echo "<button type='submit' name='ticket_action' value='accept' class='btn btn-sm btn-success fw-bold'><i class='bi bi-check-lg'></i></button>";
                                             echo "<button type='button' class='btn btn-sm btn-outline-danger fw-bold btn-reject' data-id='" . $row['ticketId'] . "'><i class='bi bi-x-lg'></i></button>";
                                         } else {
@@ -270,6 +364,53 @@ if (isset($_POST['ticket_action'])) {
                     });
                 });
             });
+
+            const releaseExpressButtons = document.querySelectorAll('.btn-release-express');
+
+            releaseExpressButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    const form = this.closest('form');
+                    const ticketId = this.getAttribute('data-id');
+
+                    Swal.fire({
+                        title: 'Release Express Ticket?',
+                        text: "This will return the ticket to the Express Lane pool.",
+                        icon: 'warning',
+                        input: 'textarea',
+                        inputLabel: 'Reason for release (required):',
+                        inputPlaceholder: 'Enter the reason for releasing this ticket...',
+                        inputAttributes: {
+                            required: 'true'
+                        },
+                        showCancelButton: true,
+                        confirmButtonColor: '#fd7e14',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Release Ticket',
+                        preConfirm: (reason) => {
+                            if (!reason || reason.trim() === '') {
+                                Swal.showValidationMessage('Reason is required to release an Express ticket');
+                            }
+                            return reason;
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            const hiddenInput = document.createElement('input');
+                            hiddenInput.type = 'hidden';
+                            hiddenInput.name = 'ticket_action';
+                            hiddenInput.value = 'release_express';
+                            form.appendChild(hiddenInput);
+
+                            const reasonInput = document.createElement('input');
+                            reasonInput.type = 'hidden';
+                            reasonInput.name = 'release_reason';
+                            reasonInput.value = result.value;
+                            form.appendChild(reasonInput);
+
+                            form.submit();
+                        }
+                    });
+                });
+            });
         });
     </script>
 
@@ -278,7 +419,7 @@ if (isset($_POST['ticket_action'])) {
             document.addEventListener('DOMContentLoaded', function() {
                 Swal.fire({
                     icon: '<?php echo $_SESSION['flash_type']; ?>',
-                    title: '<?php echo ($_SESSION['flash_type'] === 'success') ? 'Accepted!' : 'Rejected'; ?>',
+                    title: '<?php echo ($_SESSION['flash_type'] === 'success') ? 'Success!' : 'Update'; ?>',
                     text: '<?php echo addslashes($_SESSION['flash_msg']); ?>',
                     showConfirmButton: false,
                     timer: 3000,

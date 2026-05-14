@@ -1,5 +1,7 @@
 <?php
-$host = '127.0.0.1';
+$host = ($_SERVER['REMOTE_ADDR'] === '127.0.0.1' || $_SERVER['REMOTE_ADDR'] === '::1')
+    ? '127.0.0.1'
+    : '192.168.110.43';
 $db   = 'helpdesk';
 $user = 'root';
 $pass = '';

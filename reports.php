@@ -19,6 +19,7 @@ $trendSql = "SELECT
                 DATE_FORMAT(createdAt, '%Y-%m') as sort_date,
                 DATE_FORMAT(createdAt, '%M %Y') as month_label,
                 COUNT(*) as received,
+                SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending,
                 SUM(CASE WHEN status = 'Processing' THEN 1 ELSE 0 END) as processing,
                 SUM(CASE WHEN status IN ('Resolved', 'Completed') THEN 1 ELSE 0 END) as completed
             FROM ticket
@@ -28,15 +29,15 @@ $trendSql = "SELECT
 $trendStmt = $pdo->query($trendSql);
 
 $months = [];
-$dataReceived = [];
+$dataPending = [];
 $dataProcessing = [];
 $dataCompleted = [];
 
 while ($row = $trendStmt->fetch()) {
     $months[] = $row['month_label'];
-    $dataReceived[] = $row['received'];
-    $dataProcessing[] = $row['processing'];
-    $dataCompleted[] = $row['completed'];
+    $dataPending[] = (int)$row['pending'];
+    $dataProcessing[] = (int)$row['processing'];
+    $dataCompleted[] = (int)$row['completed'];
 }
 
 $selectedMonth = isset($_GET['month']) ? $_GET['month'] : 'all';
@@ -204,37 +205,30 @@ include 'head.php';
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script>
         const ctx = document.getElementById('trendChart');
 
         new Chart(ctx, {
-            type: 'line',
+            type: 'bar',
             data: {
                 labels: <?php echo json_encode($months); ?>,
-                datasets: [{
-                        label: 'Received (Total)',
-                        data: <?php echo json_encode($dataReceived); ?>,
-                        borderColor: '#6c757d',
-                        backgroundColor: 'rgba(108, 117, 125, 0.1)',
-                        tension: 0.3,
-                        fill: true
+                datasets: [
+                    {
+                        label: 'Pending',
+                        data: <?php echo json_encode($dataPending); ?>,
+                        backgroundColor: '#ffc107',
                     },
                     {
                         label: 'Processing',
                         data: <?php echo json_encode($dataProcessing); ?>,
-                        borderColor: '#0d6efd',
-                        backgroundColor: 'rgba(13, 110, 253, 0.1)',
-                        tension: 0.3,
-                        fill: true
+                        backgroundColor: '#0d6efd',
                     },
                     {
                         label: 'Completed',
                         data: <?php echo json_encode($dataCompleted); ?>,
-                        borderColor: '#198754',
-                        backgroundColor: 'rgba(25, 135, 84, 0.1)',
-                        tension: 0.3,
-                        fill: true
+                        backgroundColor: '#198754',
                     }
                 ]
             },
@@ -251,7 +245,11 @@ include 'head.php';
                     }
                 },
                 scales: {
+                    x: {
+                        stacked: true
+                    },
                     y: {
+                        stacked: true,
                         beginAtZero: true,
                         ticks: {
                             stepSize: 1

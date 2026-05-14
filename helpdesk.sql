@@ -40,29 +40,30 @@ DROP TABLE IF EXISTS `category`;
 CREATE TABLE `category` (
   `categoryId` int NOT NULL,
   `categoryName` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
-  `categoryType` varchar(50) COLLATE utf8mb4_general_ci NOT NULL
+  `categoryType` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `is_express_eligible` tinyint(1) DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `category`
 --
 
-INSERT INTO `category` (`categoryId`, `categoryName`, `categoryType`) VALUES
-(5, 'Computer Malfunction', 'Hardware Problems'),
-(6, 'Hardware Problem', 'Hardware Problems'),
-(7, 'Printer / Scanner Problem', 'Hardware Problems'),
-(8, 'Software bugs or glitches', 'Software Problems'),
-(9, 'Incompatibility issues', 'Software Problems'),
-(10, 'Software Updates/Installations', 'Software Problems'),
-(11, 'Network Installation', 'Network Problems'),
-(12, 'Network outages or downtime', 'Network Problems'),
-(13, 'Difficulty accessing network', 'Network Problems'),
-(14, 'Graphic Design Solution', 'Others'),
-(21, 'Creation', 'Account Services'),
-(22, 'Retention', 'Account Services'),
-(23, 'Reset', 'Account Services'),
-(24, 'Transfer', 'Account Services'),
-(25, 'Deletion', 'Account Services');
+INSERT INTO `category` (`categoryId`, `categoryName`, `categoryType`, `is_express_eligible`) VALUES
+(5, 'Computer Malfunction', 'Hardware Problems', 0),
+(6, 'Hardware Problem', 'Hardware Problems', 0),
+(7, 'Printer / Scanner Problem', 'Hardware Problems', 1),
+(8, 'Software bugs or glitches', 'Software Problems', 0),
+(9, 'Incompatibility issues', 'Software Problems', 0),
+(10, 'Software Updates/Installations', 'Software Problems', 0),
+(11, 'Network Installation', 'Network Problems', 0),
+(12, 'Network outages or downtime', 'Network Problems', 0),
+(13, 'Difficulty accessing network', 'Network Problems', 0),
+(14, 'Graphic Design Solution', 'Others', 0),
+(21, 'Creation', 'Account Services', 0),
+(22, 'Retention', 'Account Services', 0),
+(23, 'Reset', 'Account Services', 1),
+(24, 'Transfer', 'Account Services', 0),
+(25, 'Deletion', 'Account Services', 0);
 
 -- --------------------------------------------------------
 
@@ -441,7 +442,7 @@ CREATE TABLE `ticket` (
   `ticketId` int NOT NULL,
   `subject` varchar(150) COLLATE utf8mb4_general_ci NOT NULL,
   `description` text COLLATE utf8mb4_general_ci NOT NULL,
-  `priority` enum('Low','Medium','High') COLLATE utf8mb4_general_ci DEFAULT 'Medium',
+  `priority` enum('Low','Medium','High','Express') COLLATE utf8mb4_general_ci DEFAULT 'Medium',
   `status` enum('Pending','Processing','Resolved','Completed') COLLATE utf8mb4_general_ci DEFAULT 'Pending',
   `remarks` text COLLATE utf8mb4_general_ci,
   `userId` int NOT NULL,
@@ -453,7 +454,9 @@ CREATE TABLE `ticket` (
   `technician_signature` longtext COLLATE utf8mb4_general_ci,
   `resolvedBy` int DEFAULT NULL,
   `resolvedAt` datetime DEFAULT NULL,
-  `completedAt` datetime DEFAULT NULL
+  `completedAt` datetime DEFAULT NULL,
+  `release_reason` text COLLATE utf8mb4_general_ci,
+  `released_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -507,8 +510,28 @@ INSERT INTO `users` (`userId`, `employeeId`, `email`, `role`, `positionID`, `pas
 (2, NULL, 'boss@deped.gov.ph', 'Officer', NULL, '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Carl', NULL, 'Dolino', NULL, NULL, NULL, 2, NULL, '2026-02-12 07:34:33', NULL, 1, NULL, NULL, 1, NULL, NULL),
 (3, NULL, 'tech@deped.gov.ph', 'Technician', NULL, '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Bill', NULL, 'Variacion', NULL, NULL, NULL, 4, NULL, '2026-02-12 07:34:33', NULL, 1, NULL, NULL, 1, NULL, NULL);
 
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `ticket_credentials`
+--
+
+CREATE TABLE `ticket_credentials` (
+  `credentialId` int NOT NULL,
+  `ticketId` int NOT NULL,
+  `system_name` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `username` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `password_encrypted` text COLLATE utf8mb4_general_ci NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 --
 -- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `activity_log`
 --
 
 --
@@ -596,8 +619,16 @@ ALTER TABLE `starlink`
   MODIFY `eventId` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
 
 --
+-- AUTO_INCREMENT for table `ticket_credentials`
+--
+
+ALTER TABLE `ticket_credentials`
+  MODIFY `credentialId` int NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `ticket`
 --
+
 ALTER TABLE `ticket`
   MODIFY `ticketId` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
@@ -636,8 +667,15 @@ ALTER TABLE `users`
 -- Constraints for table `department`
 --
 
+ALTER TABLE `ticket_credentials`
+  ADD PRIMARY KEY (`credentialId`),
+  ADD KEY `ticketId` (`ticketId`);
+
 ALTER TABLE `department`
   ADD CONSTRAINT `fk_department_position` FOREIGN KEY (`positionID`) REFERENCES `position` (`positionID`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+ALTER TABLE `ticket_credentials`
+  ADD CONSTRAINT `fk_credentials_ticket` FOREIGN KEY (`ticketId`) REFERENCES `ticket` (`ticketId`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 COMMIT;
 

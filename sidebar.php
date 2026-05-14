@@ -28,18 +28,6 @@ function isActive($pageName, $currentPage)
 ?>
 
 <style>
-    .sidebar-container {
-        width: 280px;
-        height: 100vh;
-        background-color: #1e2125;
-        display: flex;
-        flex-direction: column;
-        position: fixed;
-        top: 0;
-        left: 0;
-        z-index: 1040;
-    }
-
     .custom-hover:hover {
         opacity: 1 !important;
         background-color: rgba(255, 255, 255, 0.08);
@@ -80,7 +68,7 @@ function isActive($pageName, $currentPage)
             <?php
             if ($role === 'Officer') echo 'ICT Officer';
             elseif ($role === 'Technician') echo 'ICT Technician';
-            else echo 'Staff / User';
+            else echo 'User';
             ?><?php if ($sidebarPosition): ?> - <?php echo htmlspecialchars($sidebarPosition); ?><?php endif; ?>
         </span>
     </div>
@@ -114,6 +102,11 @@ function isActive($pageName, $currentPage)
                         <i class="bi bi-people me-3 fs-5 align-middle"></i> Manage Users
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a href="manage_categories.php" class="nav-link <?= isActive('manage_categories.php', $currentPage) ?>">
+                        <i class="bi bi-tags me-3 fs-5 align-middle"></i> Manage Categories
+                    </a>
+                </li>
 
             <?php elseif ($role === 'Technician'): ?>
                 <li class="nav-item">
@@ -136,6 +129,11 @@ function isActive($pageName, $currentPage)
                         <i class="bi bi-router me-3 fs-5 align-middle"></i> Starlink Requests
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a href="create_express_ticket.php" class="nav-link <?= isActive('create_express_ticket.php', $currentPage) ?>">
+                        <i class="bi bi-lightning-fill me-3 fs-5 align-middle"></i> Express Ticket
+                    </a>
+                </li>
 
             <?php else: ?>
                 <li class="nav-item">
@@ -155,7 +153,7 @@ function isActive($pageName, $currentPage)
                 </li>
                 <li class="nav-item">
                     <a href="request_account.php" class="nav-link <?= isActive('request_account.php', $currentPage) ?>">
-                        <i class="bi bi-person-plus me-3 fs-5 align-middle"></i> Account Request
+                        <i class="bi bi-person-plus me-3 fs-5 align-middle"></i> Account Requests
                     </a>
                 </li>
                 <li class="nav-item">

@@ -18,13 +18,17 @@ if (empty($currentSignature)) {
     exit;
 }
 
-$statStmt = $pdo->prepare("SELECT 
+$statStmt = $pdo->prepare("SELECT
     SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as p,
     SUM(CASE WHEN status = 'Processing' THEN 1 ELSE 0 END) as pr,
     SUM(CASE WHEN status IN ('Resolved', 'Closed', 'Completed') THEN 1 ELSE 0 END) as r
-    FROM ticket WHERE userId = ?");
+    FROM ticket WHERE userId = ? AND priority != 'Express'");
 $statStmt->execute([$userId]);
 $stats = $statStmt->fetch();
+
+$expressStmt = $pdo->prepare("SELECT COUNT(*) as express_count FROM ticket WHERE userId = ? AND priority = 'Express'");
+$expressStmt->execute([$userId]);
+$expressCount = $expressStmt->fetchColumn();
 
 function formatTimeAgo($datetime)
 {
@@ -52,7 +56,7 @@ function formatTimeAgo($datetime)
 
             <div class="container-fluid py-5 px-5">
 
-                <div class="row align-items-center mb-5">
+                <div class="row align-items-center mb-5 db-user-heading">
                     <div class="col-md-8">
                         <h2 class="fw-bold text-dark mb-1">User Dashboard</h2>
                         <p class="text-muted">Manage your pending ICT support requests.</p>
@@ -65,7 +69,7 @@ function formatTimeAgo($datetime)
                 </div>
 
                 <div class="row mb-5 g-4">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="card shadow-sm border-0 border-top border-warning border-4 h-100 p-4">
                             <div class="d-flex justify-content-between align-items-start mb-2">
                                 <span class="fw-bold text-muted small">PENDING</span>
@@ -74,7 +78,7 @@ function formatTimeAgo($datetime)
                             <h1 class="display-4 fw-bold text-dark mb-0"><?php echo $stats['p'] ?? 0; ?></h1>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="card shadow-sm border-0 border-top border-info border-4 h-100 p-4">
                             <div class="d-flex justify-content-between align-items-start mb-2">
                                 <span class="fw-bold text-muted small">PROCESSING</span>
@@ -83,7 +87,7 @@ function formatTimeAgo($datetime)
                             <h1 class="display-4 fw-bold text-dark mb-0"><?php echo $stats['pr'] ?? 0; ?></h1>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="card shadow-sm border-0 border-top border-success border-4 h-100 p-4">
                             <div class="d-flex justify-content-between align-items-start mb-2">
                                 <span class="fw-bold text-muted small">RESOLVED / COMPLETED</span>
@@ -92,7 +96,17 @@ function formatTimeAgo($datetime)
                             <h1 class="display-4 fw-bold text-dark mb-0"><?php echo $stats['r'] ?? 0; ?></h1>
                         </div>
                     </div>
+                    <div class="col-md-3">
+                        <div class="card shadow-sm border-0 h-100 p-4" style="border-top: 4px solid #fd7e14 !important;">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="fw-bold text-muted small">EXPRESS</span>
+                                <i class="bi bi-lightning-fill text-warning fs-4"></i>
+                            </div>
+                            <h1 class="display-4 fw-bold text-dark mb-0"><?php echo $expressCount; ?></h1>
+                        </div>
+                    </div>
                 </div>
+
 
                 <div class="card border-0 shadow-sm rounded-4 p-4 mb-5">
                     <div class="mb-4">
@@ -249,14 +263,14 @@ function formatTimeAgo($datetime)
             });
         }
 
-        if (window.innerWidth <= 768) {
-            document.querySelectorAll('.sidebar-container .nav-link').forEach(function(link) {
-                link.addEventListener('click', function() {
+        document.querySelectorAll('.sidebar-container .nav-link').forEach(function(link) {
+            link.addEventListener('click', function() {
+                if (sidebarContainer && sidebarOverlay) {
                     sidebarContainer.classList.remove('show');
                     sidebarOverlay.classList.remove('show');
-                });
+                }
             });
-        }
+        });
     });
     </script>
 
