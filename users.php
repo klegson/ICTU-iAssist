@@ -50,14 +50,17 @@ include 'head.php';
                                 <th>Email</th>
                                 <th>Role</th>
                                 <th>Department</th>
+                                <th>Department Head</th>
                                 <th class="text-end pe-4">Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php
-                            $sql = "SELECT u.*, d.departmentName 
+                            $sql = "SELECT u.*, d.departmentName, d.departmentHead,
+                                           e.firstName AS h_fn, e.middleName AS h_mn, e.lastName AS h_ln, e.extension AS h_ext, e.positionTitle AS h_pos
                                     FROM users u 
                                     LEFT JOIN department d ON u.departmentId = d.departmentId 
+                                    LEFT JOIN employees e ON d.departmentHead = e.employeeID
                                     ORDER BY u.role, u.lastName";
                             $stmt = $pdo->query($sql);
 
@@ -79,6 +82,9 @@ include 'head.php';
                                 echo "<td>" . htmlspecialchars($row['email']) . "</td>";
                                 echo "<td><span class='badge " . $roleBadge . "'>" . $row['role'] . "</span></td>";
                                 echo "<td>" . htmlspecialchars($row['departmentName'] ?? 'N/A') . "</td>";
+                                $headName = trim(($row['h_fn'] ?? '') . ' ' . ($row['h_mn'] ?? '') . ' ' . ($row['h_ln'] ?? '') . ' ' . ($row['h_ext'] ?? ''));
+                                $headName = trim(preg_replace('/\s+/', ' ', $headName));
+                                echo "<td class='small'>" . ($headName ? htmlspecialchars($headName . ' — ' . ($row['h_pos'] ?? 'N/A')) : '<span class="text-muted">N/A</span>') . "</td>";
                                 echo "<td class='text-end pe-4'>
                                         <a href='edit_user.php?id=" . $row['userId'] . "' class='btn btn-sm btn-outline-secondary me-1'><i class='bi bi-pencil'></i></a>
                                         " . ($row['userId'] != $_SESSION['user_id'] ?

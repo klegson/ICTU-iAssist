@@ -14,7 +14,7 @@ body {
 
 /* Login Page */
 body.login-body {
-    background-color: #e9ecef;
+    background-color: #f4f7f5;
     min-height: 100vh;
     min-height: 100dvh;
     display: flex;
@@ -29,6 +29,7 @@ body.login-body {
     border-radius: var(--card-radius);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
     background: white;
+    border-top: 4px solid var(--deped-green);
 }
 
 .deped-logo {
@@ -222,6 +223,36 @@ body.login-body {
     color: white;
 }
 
+.btn-deped {
+    background-color: var(--deped-green);
+    color: white;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-weight: 600;
+    border: none;
+    transition: all 0.2s;
+}
+
+.btn-deped:hover {
+    background-color: #144d1a;
+    color: white;
+}
+
+.btn-deped-ghost {
+    background-color: white;
+    color: #3c4043;
+    border: 1px solid #dadce0;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-deped-ghost:hover {
+    background-color: #f8f9fa;
+    color: #202124;
+}
+
 /* Badges */
 .badge.bg-warning {
     background-color: #fff3cd !important;
@@ -409,4 +440,42 @@ body.login-body {
     color: white;
     font-size: 1.2rem;
     padding: 5px 10px;
+}
+
+.signature-container {
+    border: 1.5px solid #ccc;
+    border-radius: 8px;
+    background: #fff;
+    height: 200px;
+    width: 100%;
+    position: relative;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.signature-container::after {
+    content: '';
+    position: absolute;
+    bottom: 40px;
+    left: 20px;
+    right: 20px;
+    height: 1px;
+    background: repeating-linear-gradient(to right, #ccc 0, #ccc 6px, transparent 6px, transparent 10px);
+    pointer-events: none;
+}
+
+.signature-pad {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.signature-hint {
+    position: absolute;
+    bottom: 14px;
+    right: 25px;
+    color: #ccc;
+    font-size: 0.8rem;
+    font-style: italic;
+    pointer-events: none;
+    user-select: none;
 }

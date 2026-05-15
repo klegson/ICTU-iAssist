@@ -64,7 +64,7 @@ function isActive($pageName, $currentPage)
     </div>
 
     <div class="px-3 mb-2">
-        <span class="badge bg-secondary bg-opacity-40 border border-secondary border-opacity-50 text-light w-100 py-2 fs-7" style="font-size: 0.8rem;">
+        <span class="badge bg-secondary bg-opacity-40 border border-secondary border-opacity-50 text-light w-100 py-2 fs-7" style="font-size: 0.8rem; white-space: normal;">
             <?php
             if ($role === 'Officer') echo 'ICT Officer';
             elseif ($role === 'Technician') echo 'ICT Technician';

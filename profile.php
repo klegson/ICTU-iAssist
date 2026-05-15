@@ -11,9 +11,11 @@ $userId = $_SESSION['user_id'];
 $successMessage = '';
 $errorMessage = '';
 
-$sql = "SELECT u.*, d.departmentName, d.departmentCode, p.positionTitle
+$sql = "SELECT u.*, d.departmentName, d.departmentCode, d.departmentHead, p.positionTitle,
+               e.firstName AS h_fn, e.middleName AS h_mn, e.lastName AS h_ln, e.extension AS h_ext, e.positionTitle AS h_pos
         FROM users u
         LEFT JOIN department d ON u.departmentId = d.departmentId
+        LEFT JOIN employees e ON d.departmentHead = e.employeeID
         LEFT JOIN position p ON u.positionID = p.positionID
         WHERE u.userId = ?";
 $stmt = $pdo->prepare($sql);
@@ -186,6 +188,12 @@ include 'head.php';
                                 <?php echo htmlspecialchars($user['role']); ?>
                             </span>
                             <p class="text-muted mb-1"><i class="bi bi-building me-2"></i><?php echo htmlspecialchars(($user['departmentName'] ?? 'N/A') . ' (' . ($user['departmentCode'] ?? 'N/A') . ')'); ?></p>
+                            <?php
+                            $headName = trim(($user['h_fn'] ?? '') . ' ' . ($user['h_mn'] ?? '') . ' ' . ($user['h_ln'] ?? '') . ' ' . ($user['h_ext'] ?? ''));
+                            $headName = trim(preg_replace('/\s+/', ' ', $headName));
+                            if ($headName): ?>
+                            <p class="text-muted mb-1 small"><i class="bi bi-person-badge me-2"></i>Dept Head: <?php echo htmlspecialchars($headName . ' — ' . ($user['h_pos'] ?? 'N/A')); ?></p>
+                            <?php endif; ?>
                             <?php if (!empty($user['positionTitle'])): ?>
                                 <p class="text-muted mb-1"><i class="bi bi-briefcase me-2"></i><?php echo htmlspecialchars($user['positionTitle']); ?></p>
                             <?php endif; ?>
@@ -305,7 +313,7 @@ include 'head.php';
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">Current Signature</label>
                                     <div class="p-3 border rounded bg-light text-center">
-                                        <img src="<?php echo htmlspecialchars($user['signature']); ?>" alt="Current Signature" style="max-width: 100%; height: auto; max-height: 150px;">
+                                        <img src="<?php echo htmlspecialchars($user['signature']); ?>" alt="Current Signature" style="max-width: 100%; height: auto; max-height: 200px;">
                                     </div>
                                 </div>
                             <?php endif; ?>
@@ -430,7 +438,15 @@ include 'head.php';
                         alert('Please draw your signature before saving.');
                         return;
                     }
-                    document.getElementById('modal-signature-data').value = signaturePad.toDataURL();
+                    var exportCanvas = document.createElement('canvas');
+                    var canvas = document.getElementById('modal-signature-pad');
+                    exportCanvas.width = canvas.offsetWidth;
+                    exportCanvas.height = canvas.offsetHeight;
+                    var exportCtx = exportCanvas.getContext('2d');
+                    exportCtx.fillStyle = '#fff';
+                    exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+                    exportCtx.drawImage(canvas, 0, 0);
+                    document.getElementById('modal-signature-data').value = exportCanvas.toDataURL('image/jpeg', 0.7);
                     document.getElementById('signature-update-form').submit();
                 });
             }

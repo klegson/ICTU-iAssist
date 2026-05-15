@@ -42,6 +42,7 @@ include 'head.php';
 
         <div class="card shadow-lg border-0 rounded-4 p-4 p-md-5">
             <form method="POST" id="signature-form">
+                <input type="hidden" name="save_signature" value="1">
 
                 <div class="mb-4">
                     <div class="d-flex justify-content-between align-items-end mb-2">
@@ -51,13 +52,14 @@ include 'head.php';
                         </button>
                     </div>
 
-                    <div class="signature-container shadow-inner">
+                    <div class="signature-container">
                         <canvas id="signature-pad" class="signature-pad"></canvas>
+                        <div class="signature-hint">Sign here</div>
                     </div>
                     <input type="hidden" name="signature_data" id="signature_data">
                 </div>
 
-                <button type="submit" name="save_signature" id="btn-save" class="btn btn-deped-primary w-100 py-3 fw-bold fs-5 rounded-3">
+                <button type="submit" name="save_signature" id="btn-save" class="btn btn-success w-100 py-2 fw-bold fs-6 rounded-3">
                     <i class="bi bi-check-circle-fill me-2"></i> Save Signature & Continue
                 </button>
                 <div class="text-center mt-4">
@@ -97,8 +99,9 @@ include 'head.php';
             });
 
             document.getElementById('btn-save').addEventListener('click', function(e) {
+                e.preventDefault();
+
                 if (signaturePad.isEmpty()) {
-                    e.preventDefault();
                     Swal.fire({
                         icon: 'warning',
                         title: 'Signature Required',
@@ -106,7 +109,22 @@ include 'head.php';
                         confirmButtonColor: '#1a5c28'
                     });
                 } else {
-                    document.getElementById('signature_data').value = signaturePad.toDataURL();
+                    var btn = this;
+                    var form = document.getElementById('signature-form');
+
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Saving...';
+                    btn.disabled = true;
+
+                    var exportCanvas = document.createElement('canvas');
+                    exportCanvas.width = canvas.offsetWidth;
+                    exportCanvas.height = canvas.offsetHeight;
+                    var exportCtx = exportCanvas.getContext('2d');
+                    exportCtx.fillStyle = '#fff';
+                    exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+                    exportCtx.drawImage(canvas, 0, 0);
+                    document.getElementById('signature_data').value = exportCanvas.toDataURL('image/jpeg', 0.7);
+
+                    form.submit();
                 }
             });
         });

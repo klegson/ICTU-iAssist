@@ -11,10 +11,13 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Officer', 'Te
 $ticketId = $_GET['id'] ?? null;
 $message = '';
 
-$sql = "SELECT t.*, u.firstName, u.lastName, d.departmentName, c.categoryType
+$sql = "SELECT t.*, u.firstName, u.lastName, d.departmentName, d.departmentHead, p.positionTitle, c.categoryType,
+               e.firstName AS h_fn, e.middleName AS h_mn, e.lastName AS h_ln, e.extension AS h_ext, e.positionTitle AS h_pos
         FROM ticket t
         JOIN users u ON t.userId = u.userId
         LEFT JOIN department d ON u.departmentId = d.departmentId
+        LEFT JOIN employees e ON d.departmentHead = e.employeeID
+        LEFT JOIN position p ON u.positionID = p.positionID
         LEFT JOIN category c ON t.categoryId = c.categoryId
         WHERE t.ticketId = ?";
 $stmt = $pdo->prepare($sql);
@@ -53,30 +56,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['resolve_ticket'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_credential']) && $canManageCreds) {
+    $systemName = trim($_POST['cred_system']);
     $username = trim($_POST['cred_username']);
     $password = encryptPassword(trim($_POST['cred_password']));
     $stmt = $pdo->prepare("INSERT INTO ticket_credentials (ticketId, system_name, username, password_encrypted) VALUES (?, ?, ?, ?)");
-    foreach (($_POST['cred_system'] ?? []) as $sys) {
-        $stmt->execute([$ticketId, trim($sys), $username, $password]);
-    }
-    header("Location: manage_ticket.php?id=" . $ticketId);
-    exit;
-}
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_credential']) && $canManageCreds) {
-    $credId = (int)$_POST['credential_id'];
-    $username = trim($_POST['cred_username']);
-    $password = encryptPassword(trim($_POST['cred_password']));
-    $stmt = $pdo->prepare("UPDATE ticket_credentials SET username = ?, password_encrypted = ?, updated_at = NOW() WHERE credentialId = ? AND ticketId = ?");
-    $stmt->execute([$username, $password, $credId, $ticketId]);
-    header("Location: manage_ticket.php?id=" . $ticketId);
-    exit;
-}
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_credential']) && $canManageCreds) {
-    $credId = (int)$_POST['credential_id'];
-    $stmt = $pdo->prepare("DELETE FROM ticket_credentials WHERE credentialId = ? AND ticketId = ?");
-    $stmt->execute([$credId, $ticketId]);
+    $stmt->execute([$ticketId, $systemName, $username, $password]);
     header("Location: manage_ticket.php?id=" . $ticketId);
     exit;
 }
@@ -88,16 +72,37 @@ $credStmt = $pdo->prepare("SELECT * FROM ticket_credentials WHERE ticketId = ? O
 $credStmt->execute([$ticketId]);
 $credentials = $credStmt->fetchAll();
 
-$editCredId = isset($_GET['edit_cred']) ? (int)$_GET['edit_cred'] : 0;
-$editCred = null;
-if ($editCredId) {
-    foreach ($credentials as $c) {
-        if ($c['credentialId'] === $editCredId) {
-            $editCred = $c;
-            break;
-        }
-    }
+$existingBySystem = [];
+foreach ($credentials as $c) {
+    $existingBySystem[$c['system_name']] = $c;
 }
+
+$systemLabels = [
+    'Google Account' => 'Gmail Address',
+    'MS 365 Account' => 'Outlook/MS User',
+    'HAPPISA Portal' => 'Username',
+    'DTS Account' => 'Username',
+    'E-PERMIT' => 'Username',
+    'WIFI Portal Access' => 'Username',
+];
+
+$systemIcons = [
+    'Google Account' => 'bi-google',
+    'MS 365 Account' => 'bi-microsoft',
+    'HAPPISA Portal' => 'bi-building',
+    'DTS Account' => 'bi-file-earmark-text',
+    'E-PERMIT' => 'bi-file-check',
+    'WIFI Portal Access' => 'bi-wifi',
+];
+
+$systemColors = [
+    'Google Account' => '#ea4335',
+    'MS 365 Account' => '#0078d4',
+    'HAPPISA Portal' => '#6f42c1',
+    'DTS Account' => '#198754',
+    'E-PERMIT' => '#fd7e14',
+    'WIFI Portal Access' => '#0dcaf0',
+];
 
 $systemNameMap = [
     'Google Account' => 'Google Account',
@@ -147,78 +152,83 @@ include 'head.php';
                 <div class="row g-4">
                     <div class="col-lg-8">
 
+                        <div class="card border-0 shadow-sm rounded-4 mb-4" style="border-top: 4px solid #0dcaf0 !important;">
+                            <div class="card-body p-4">
+                                <h6 class="fw-bold text-dark mb-3">Requestor Details</h6>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <label class="small text-muted fw-bold">NAME</label>
+                                        <div class="text-dark"><?php echo htmlspecialchars($ticket['firstName'] . ' ' . $ticket['lastName']); ?></div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="small text-muted fw-bold">DEPARTMENT</label>
+                                        <div class="text-dark"><?php echo htmlspecialchars($ticket['departmentName'] ?? 'No Department'); ?></div>
+                                        <?php
+                                        $headName = trim(($ticket['h_fn'] ?? '') . ' ' . ($ticket['h_mn'] ?? '') . ' ' . ($ticket['h_ln'] ?? '') . ' ' . ($ticket['h_ext'] ?? ''));
+                                        $headName = trim(preg_replace('/\s+/', ' ', $headName));
+                                        if ($headName): ?>
+                                        <div class="small text-muted mt-1">Dept Head: <?php echo htmlspecialchars($headName . ' — ' . ($ticket['h_pos'] ?? 'N/A')); ?></div>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="small text-muted fw-bold">POSITION</label>
+                                        <div class="text-dark"><?php echo htmlspecialchars($ticket['positionTitle'] ?? 'N/A'); ?></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <?php if ($canManageCreds): ?>
-                        <div class="card border-0 shadow-sm rounded-4 mt-4" style="border-top: 4px solid #0d6efd !important;">
-                            <div class="card-body p-4 p-md-5">
-                                <h6 class="fw-bold text-dark mb-4"><i class="bi bi-key-fill me-2 text-primary"></i>Account Credentials</h6>
-
-                                <?php if (empty($credentials)): ?>
-                                <form method="POST">
-                                    <input type="hidden" name="credential_id" value="<?= $editCred ? $editCred['credentialId'] : '' ?>">
-                                    <div class="d-flex gap-2 align-items-end">
-                                        <div class="flex-grow-1" style="min-width:0;">
-                                            <label class="small text-muted fw-bold mb-1">SYSTEMS</label>
-                                            <select name="cred_system[]" class="form-select form-select-sm" multiple required size="<?= min(count($allowedSystems), 4) ?>">
-                                                <?php
-                                                $selectedSystem = $editCred ? $editCred['system_name'] : '';
-                                                foreach ($allowedSystems as $sys):
-                                                ?>
-                                                <option value="<?= $sys ?>" <?= $sys === $selectedSystem ? 'selected' : '' ?>><?= $sys ?></option>
-                                                <?php endforeach; ?>
-                                            </select>
+                        <div class="mt-4">
+                            <?php foreach ($allowedSystems as $sys):
+                                $hasCred = isset($existingBySystem[$sys]);
+                                $color = $systemColors[$sys] ?? '#0d6efd';
+                                $icon = $systemIcons[$sys] ?? 'bi-key-fill';
+                                $label = $systemLabels[$sys] ?? 'Username';
+                            ?>
+                            <div class="card border-0 shadow-sm rounded-4 mb-3" style="border-top: 3px solid <?= $color ?>;">
+                                <div class="card-body p-4">
+                                    <?php if ($hasCred):
+                                        $cred = $existingBySystem[$sys]; ?>
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 class="fw-bold text-dark mb-0"><i class="bi <?= $icon ?> me-2" style="color:<?= $color ?>"></i><?= $sys ?> Credentials</h6>
+                                        <span class="badge bg-success rounded-pill"><i class="bi bi-check-lg me-1"></i>Saved</span>
+                                    </div>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="small text-muted fw-bold"><?= $label ?></label>
+                                            <div class="text-dark fw-bold"><?= htmlspecialchars($cred['username']) ?></div>
                                         </div>
-                                        <div class="flex-grow-1" style="min-width:0;">
-                                            <label class="small text-muted fw-bold mb-1">USERNAME</label>
-                                            <input type="text" name="cred_username" class="form-control form-control-sm" value="<?= $editCred ? htmlspecialchars($editCred['username']) : '' ?>" required>
-                                        </div>
-                                        <div class="flex-grow-1" style="min-width:0;">
-                                            <label class="small text-muted fw-bold mb-1">PASSWORD</label>
-                                            <input type="password" name="cred_password" class="form-control form-control-sm" id="newCredPass" value="<?= $editCred ? htmlspecialchars(decryptPassword($editCred['password_encrypted'])) : '' ?>" required>
-                                        </div>
-                                        <div class="flex-shrink-0">
-                                            <?php if ($editCred): ?>
-                                            <a href="?id=<?= $ticketId ?>" class="btn btn-sm btn-light border me-1">Cancel</a>
-                                            <button type="submit" name="update_credential" class="btn btn-sm btn-primary" title="Update"><i class="bi bi-check-lg"></i></button>
-                                            <?php else: ?>
-                                            <button type="submit" name="save_credential" class="btn btn-sm btn-success rounded-circle d-flex align-items-center justify-content-center" style="width:31px;height:31px;" title="Add Credential">
-                                                <i class="bi bi-plus-lg"></i>
-                                            </button>
-                                            <?php endif; ?>
+                                        <div class="col-md-6">
+                                            <label class="small text-muted fw-bold">Temporary Password</label>
+                                            <div class="input-group input-group-sm">
+                                                <input type="password" class="form-control border-end-0" value="<?= htmlspecialchars(decryptPassword($cred['password_encrypted'])) ?>" readonly id="pw-<?= $cred['credentialId'] ?>">
+                                                <button class="btn btn-white border" type="button" onclick="togglePassword('pw-<?= $cred['credentialId'] ?>', this)"><i class="bi bi-eye"></i></button>
+                                            </div>
                                         </div>
                                     </div>
-                                </form>
-                                <?php endif; ?>
-
-                                <?php if (!empty($credentials)): ?>
-                                <div class="table-responsive mt-3">
-                                    <table class="table table-sm table-striped align-middle mb-0">
-                                        <thead>
-                                            <tr>
-                                                <th class="text-muted small fw-bold">SYSTEM</th>
-                                                <th class="text-muted small fw-bold">USERNAME</th>
-                                                <th class="text-muted small fw-bold">PASSWORD</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <?php foreach ($credentials as $cred): ?>
-                                            <tr>
-                                                <td class="fw-bold small"><?= htmlspecialchars($cred['system_name']) ?></td>
-                                                <td class="small"><?= htmlspecialchars($cred['username']) ?></td>
-                                                <td>
-                                                    <div class="input-group input-group-sm">
-                                                        <input type="password" class="form-control border-end-0" value="<?= htmlspecialchars(decryptPassword($cred['password_encrypted'])) ?>" readonly id="mpw-<?= $cred['credentialId'] ?>">
-                                                        <button class="btn btn-white border" type="button" onclick="togglePassword('mpw-<?= $cred['credentialId'] ?>', this)"><i class="bi bi-eye"></i></button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            <?php endforeach; ?>
-                                        </tbody>
-                                    </table>
+                                    <?php else: ?>
+                                    <h6 class="fw-bold text-dark mb-3"><i class="bi <?= $icon ?> me-2" style="color:<?= $color ?>"></i><?= $sys ?> Credentials</h6>
+                                    <form method="POST">
+                                        <input type="hidden" name="cred_system" value="<?= $sys ?>">
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label class="small text-muted fw-bold mb-1"><?= $label ?></label>
+                                                <input type="text" name="cred_username" class="form-control form-control-sm" required>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="small text-muted fw-bold mb-1">Temporary Password</label>
+                                                <input type="password" name="cred_password" class="form-control form-control-sm" required>
+                                            </div>
+                                        </div>
+                                        <button type="submit" name="save_credential" class="btn btn-success btn-sm mt-3">
+                                            <i class="bi bi-check-lg me-1"></i>Save <?= $sys ?> Credentials
+                                        </button>
+                                    </form>
+                                    <?php endif; ?>
                                 </div>
-                                <?php endif; ?>
-
-                                <small class="text-muted d-block mt-3"><i class="bi bi-info-circle me-1"></i>Credentials auto-expire 10 days after creation. Passwords are encrypted at rest.</small>
                             </div>
+                            <?php endforeach; ?>
+                            <small class="text-muted d-block"><i class="bi bi-info-circle me-1"></i>Credentials auto-expire 10 days after creation. Passwords are encrypted at rest.</small>
                         </div>
                         <?php endif; ?>
 
@@ -229,19 +239,9 @@ include 'head.php';
                             <h6 class="fw-bold text-dark border-bottom pb-3 mb-4">Action Panel</h6>
 
                             <div class="mb-4 pb-4 border-bottom">
-                                <div class="d-flex justify-content-between mb-3">
-                                    <div>
-                                        <label class="small text-muted fw-bold">NAME</label>
-                                        <div class="text-dark fw-bold small"><?php echo htmlspecialchars($ticket['firstName'] . ' ' . $ticket['lastName']); ?></div>
-                                    </div>
-                                    <div class="text-end">
-                                        <label class="small text-muted fw-bold">DEPARTMENT</label>
-                                        <div class="text-dark small"><?php echo htmlspecialchars($ticket['departmentName'] ?? 'No Department'); ?></div>
-                                    </div>
-                                </div>
                                 <label class="small text-muted fw-bold mb-1">SUBJECT</label>
                                 <div class="text-dark fw-bold small mb-1"><?php echo htmlspecialchars($ticket['subject']); ?></div>
-                                <div class="p-3 bg-light rounded-3 border text-dark small" style="font-size: 0.85rem; line-height: 1.5; max-height: 180px; overflow-y: auto;">
+                                <div class="p-3 bg-light rounded-3 border text-dark small" style="font-size:0.85rem;line-height:1.5;max-height:150px;overflow-y:auto;">
                                     <?php echo nl2br(htmlspecialchars($ticket['description'])); ?>
                                 </div>
                                 <?php if ($ticket['priority'] === 'Express'): ?>

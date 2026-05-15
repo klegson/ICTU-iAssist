@@ -20,11 +20,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['complete_ticket'])) {
 
 $showSurveyModal = isset($_SESSION['pending_completion']) && $_SESSION['pending_completion'] == $ticketId;
 
-$sql = "SELECT t.*, u.firstName, u.lastName, u.email, d.departmentName, c.categoryName,
-        tech.firstName AS techFirstName, tech.lastName AS techLastName
+$sql = "SELECT t.*, u.firstName, u.lastName, u.email, d.departmentName, d.departmentHead, c.categoryName,
+        tech.firstName AS techFirstName, tech.lastName AS techLastName,
+        e.firstName AS h_fn, e.middleName AS h_mn, e.lastName AS h_ln, e.extension AS h_ext, e.positionTitle AS h_pos
         FROM ticket t 
         JOIN users u ON t.userId = u.userId 
         LEFT JOIN department d ON u.departmentId = d.departmentId
+        LEFT JOIN employees e ON d.departmentHead = e.employeeID
         LEFT JOIN category c ON t.categoryId = c.categoryId
         LEFT JOIN users tech ON t.assignedTo = tech.userId
         WHERE t.ticketId = ?";
@@ -245,6 +247,12 @@ include 'head.php';
                                 <label class="small text-muted fw-bold text-uppercase mb-2">Requestor</label>
                                 <div class="text-dark"><?php echo htmlspecialchars($ticket['firstName'] . ' ' . $ticket['lastName']); ?></div>
                                 <div class="small text-muted"><?php echo htmlspecialchars($ticket['departmentName'] ?? 'No Department'); ?></div>
+                                <?php
+                                $headName = trim(($ticket['h_fn'] ?? '') . ' ' . ($ticket['h_mn'] ?? '') . ' ' . ($ticket['h_ln'] ?? '') . ' ' . ($ticket['h_ext'] ?? ''));
+                                $headName = trim(preg_replace('/\s+/', ' ', $headName));
+                                if ($headName): ?>
+                                <div class="small text-muted mt-1"><i class="bi bi-person-badge me-1"></i>Dept Head: <?php echo htmlspecialchars($headName . ' — ' . ($ticket['h_pos'] ?? 'N/A')); ?></div>
+                                <?php endif; ?>
                             </div>
                         </div>
 

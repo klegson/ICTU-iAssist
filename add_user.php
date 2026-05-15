@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_user'])) {
     }
 }
 
-$deptStmt = $pdo->query("SELECT * FROM department ORDER BY departmentCode ASC");
+$deptStmt = $pdo->query("SELECT d.*, e.firstName AS h_fn, e.middleName AS h_mn, e.lastName AS h_ln, e.extension AS h_ext, e.positionTitle AS h_pos FROM department d LEFT JOIN employees e ON d.departmentHead = e.employeeID ORDER BY d.departmentCode ASC");
 $departments = $deptStmt->fetchAll();
 
 $posStmt = $pdo->query("SELECT * FROM position ORDER BY positionTitle ASC");
@@ -48,9 +48,11 @@ $pendingStmt = $pdo->query("SELECT * FROM users WHERE isApproved = 0 ORDER BY cr
 $pendingUsers = $pendingStmt->fetchAll();
 
 $activeStmt = $pdo->query("
-    SELECT u.*, d.departmentCode, d.section_unit, p.positionTitle
+    SELECT u.*, d.departmentCode, d.section_unit, d.departmentHead, p.positionTitle,
+           e.firstName AS h_fn, e.middleName AS h_mn, e.lastName AS h_ln, e.extension AS h_ext, e.positionTitle AS h_pos
     FROM users u
     LEFT JOIN department d ON u.departmentId = d.departmentId
+    LEFT JOIN employees e ON d.departmentHead = e.employeeID
     LEFT JOIN position p ON u.positionID = p.positionID
     WHERE u.isApproved = 1
     ORDER BY u.lastName ASC
@@ -161,6 +163,14 @@ include 'head.php';
                                             <td>
                                                 <div class="fw-bold" style="font-size: 0.9rem;"><?php echo htmlspecialchars($user['departmentCode'] ?? 'Unassigned'); ?></div>
                                                 <div class="text-muted" style="font-size: 0.8rem;"><?php echo htmlspecialchars($user['section_unit'] ?? ''); ?></div>
+                                                <?php
+                                                $headName = trim(($user['h_fn'] ?? '') . ' ' . ($user['h_mn'] ?? '') . ' ' . ($user['h_ln'] ?? '') . ' ' . ($user['h_ext'] ?? ''));
+                                                $headName = trim(preg_replace('/\s+/', ' ', $headName));
+                                                if ($headName): ?>
+                                                <div class="small text-muted mt-1" style="font-size: 0.75rem !important; border-top: 1px dashed #dee2e6; padding-top: 2px;">
+                                                    <i class="bi bi-person-badge me-1"></i><?php echo htmlspecialchars($headName . ' — ' . ($user['h_pos'] ?? 'N/A')); ?>
+                                                </div>
+                                                <?php endif; ?>
                                             </td>
                                             <td><span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-50">Approved</span></td>
                                         </tr>
@@ -227,10 +237,15 @@ include 'head.php';
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label small fw-bold text-muted">Department / Division Assignment</label>
-                                    <select name="departmentId" class="form-select" required>
-                                        <option value="" disabled selected>-- Select a Division/Unit --</option>
+                                    <select name="departmentId" class="form-select" id="deptSelect" required>
+                                        <option value="" disabled selected data-head="">-- Select a Division/Unit --</option>
                                         <?php foreach ($departments as $dept): ?>
-                                            <option value="<?php echo $dept['departmentId']; ?>">
+                                            <?php
+                                            $headName = trim(($dept['h_fn'] ?? '') . ' ' . ($dept['h_mn'] ?? '') . ' ' . ($dept['h_ln'] ?? '') . ' ' . ($dept['h_ext'] ?? ''));
+                                            $headName = trim(preg_replace('/\s+/', ' ', $headName));
+                                            $headDisplay = $headName ? $headName . ' — ' . ($dept['h_pos'] ?? 'N/A') : '';
+                                            ?>
+                                            <option value="<?php echo $dept['departmentId']; ?>" data-head="<?php echo htmlspecialchars($headDisplay); ?>">
                                                 <?php
                                                 $displayName = $dept['departmentCode'];
                                                 if (!empty($dept['section_unit'])) {
@@ -243,6 +258,7 @@ include 'head.php';
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
+                                    <small id="deptHeadLabel" class="text-muted mt-1 d-block"></small>
                                 </div>
                             </div>
                         </div>
@@ -256,6 +272,14 @@ include 'head.php';
         </div>
 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script>
+        document.getElementById('deptSelect')?.addEventListener('change', function() {
+            var label = document.getElementById('deptHeadLabel');
+            var selected = this.options[this.selectedIndex];
+            var head = selected ? selected.getAttribute('data-head') : '';
+            label.textContent = head ? 'Department Head: ' + head : '';
+        });
+        </script>
 </body>
 
 </html>
