@@ -122,7 +122,7 @@ include 'head.php';
                                         $techTotal = $countStmt->fetchColumn();
                                         $techTotalPages = max(1, ceil($techTotal / $limit));
 
-                                        $dataSql = "SELECT t.*, u.firstName, u.lastName, c.categoryName
+                                        $dataSql = "SELECT t.*, u.firstName, u.middleName, u.lastName, c.categoryName
                                                 FROM ticket t
                                                 JOIN users u ON t.userId = u.userId
                                                 LEFT JOIN category c ON t.categoryId = c.categoryId
@@ -139,7 +139,7 @@ include 'head.php';
                                                 $aging = formatTimeAgo($row['createdAt']);
                                                 $agingColor = (strpos($aging, 'd') !== false) ? 'text-danger' : 'text-muted';
 
-                                                $name = htmlspecialchars($row['firstName'] . ' ' . $row['lastName']);
+                                                $name = htmlspecialchars(formatName($row['firstName'], $row['middleName'], $row['lastName']));
                                                 $cat = htmlspecialchars($row['categoryName'] ?? 'General');
 
                                                 $badgeClass = match ($row['status']) {
@@ -244,7 +244,7 @@ include 'head.php';
                                         $acctTotal = $countStmt->fetchColumn();
                                         $acctTotalPages = max(1, ceil($acctTotal / $limit));
 
-                                        $dataSql = "SELECT t.*, u.firstName, u.lastName, c.categoryName
+                                        $dataSql = "SELECT t.*, u.firstName, u.middleName, u.lastName, c.categoryName
                                                 FROM ticket t
                                                 JOIN users u ON t.userId = u.userId
                                                 LEFT JOIN category c ON t.categoryId = c.categoryId
@@ -261,7 +261,7 @@ include 'head.php';
                                                 $aging = formatTimeAgo($row['createdAt']);
                                                 $agingColor = (strpos($aging, 'd') !== false) ? 'text-danger' : 'text-muted';
 
-                                                $name = htmlspecialchars($row['firstName'] . ' ' . $row['lastName']);
+                                                $name = htmlspecialchars(formatName($row['firstName'], $row['middleName'], $row['lastName']));
                                                 $cat = htmlspecialchars($row['categoryName'] ?? 'General');
 
                                                 $badgeClass = match ($row['status']) {

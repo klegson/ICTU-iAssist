@@ -99,8 +99,8 @@ function formatTimeAgo($datetime)
                             </thead>
                             <tbody>
                                 <?php
-                                $sql = "SELECT t.*, u.firstName, u.lastName, d.departmentName, c.categoryName,
-                                        CONCAT(t2.firstName, ' ', t2.lastName) as technicianName
+                                $sql = "SELECT t.*, u.firstName, u.middleName, u.lastName, d.departmentName, c.categoryName,
+                                        t2.firstName as techFirstName, t2.middleName as techMiddleName, t2.lastName as techLastName
                                         FROM ticket t
                                         JOIN users u ON t.userId = u.userId
                                         LEFT JOIN department d ON u.departmentId = d.departmentId
@@ -119,7 +119,7 @@ function formatTimeAgo($datetime)
                                         $aging = formatTimeAgo($row['createdAt']);
                                         $agingColor = (strpos($aging, 'd') !== false) ? 'text-danger' : 'text-muted';
 
-                                        $name = htmlspecialchars($row['firstName'] . ' ' . $row['lastName']);
+                                        $name = htmlspecialchars(formatName($row['firstName'], $row['middleName'], $row['lastName']));
                                         $dept = htmlspecialchars($row['departmentName'] ?? 'N/A');
 
                                         echo "<tr style='border-bottom: 1px solid #f8f9fa;'>";
@@ -133,7 +133,7 @@ function formatTimeAgo($datetime)
                                                 <span class='d-block text-dark fw-bold'>" . $name . "</span>
                                                 <small class='text-muted'>" . $dept . "</small>
                                               </td>";
-                                        echo "<td class='py-3'><span class='badge bg-light text-dark border'>" . htmlspecialchars($row['technicianName'] ?? 'Pending Review') . "</span></td>";
+                                        echo "<td class='py-3'><span class='badge bg-light text-dark border'>" . htmlspecialchars($row['techFirstName'] ? formatName($row['techFirstName'], $row['techMiddleName'] ?? '', $row['techLastName']) : 'Pending Review') . "</span></td>";
                                         echo "<td class='py-3 text-end'>
                                                 <a href='manage_ticket.php?id=" . $row['ticketId'] . "' class='btn btn-sm btn-deped-primary'>
                                                     Review <i class='bi bi-arrow-right ms-1'></i>
@@ -170,7 +170,7 @@ function formatTimeAgo($datetime)
                             </thead>
                             <tbody>
                                 <?php
-                                $sql = "SELECT t.*, u.firstName, u.lastName, d.departmentName, c.categoryName
+                                $sql = "SELECT t.*, u.firstName, u.middleName, u.lastName, d.departmentName, c.categoryName
                                         FROM ticket t
                                         JOIN users u ON t.userId = u.userId
                                         LEFT JOIN department d ON u.departmentId = d.departmentId
@@ -188,7 +188,7 @@ function formatTimeAgo($datetime)
                                         $aging = formatTimeAgo($row['createdAt']);
                                         $agingColor = (strpos($aging, 'd') !== false) ? 'text-danger' : 'text-muted';
 
-                                        $name = htmlspecialchars($row['firstName'] . ' ' . $row['lastName']);
+                                        $name = htmlspecialchars(formatName($row['firstName'], $row['middleName'], $row['lastName']));
                                         $dept = htmlspecialchars($row['departmentName'] ?? 'N/A');
                                         $catName = htmlspecialchars($row['categoryName'] ?? 'General');
 

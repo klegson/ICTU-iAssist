@@ -48,7 +48,7 @@ if (isset($_POST['action']) && isset($_POST['id'])) {
     }
 }
 
-$sql = "SELECT s.*, u.firstName, u.lastName, d.departmentName, d.section_unit
+$sql = "SELECT s.*, u.firstName, u.middleName, u.lastName, d.departmentName, d.section_unit
         FROM starlink s 
         JOIN users u ON s.userId = u.userId 
         LEFT JOIN department d ON u.departmentId = d.departmentId 
@@ -148,7 +148,7 @@ include 'head.php';
                                         $agingClass = ($status == 'Pending' && $interval->d >= 2) ? 'text-danger fw-bold' : 'text-muted';
                                         ?>
                                         <tr class="request-row">
-                                            <td class="fw-bold text-dark"><?php echo htmlspecialchars($row['firstName'] . ' ' . $row['lastName']); ?></td>
+                                            <td class="fw-bold text-dark"><?php echo htmlspecialchars(formatName($row['firstName'], $row['middleName'], $row['lastName'])); ?></td>
                                             <td class="text-dark"><?php echo htmlspecialchars($row['departmentName'] ?? 'N/A') . ($row['section_unit'] ? ' / ' . $row['section_unit'] : ''); ?></td>
                                             <td class="fw-bold text-dark"><?php echo htmlspecialchars($row['event_name']); ?></td>
                                             <td class="text-dark"><?php echo $dateFormatted; ?></td>

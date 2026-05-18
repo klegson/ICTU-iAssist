@@ -19,11 +19,11 @@ if (isset($_POST['submit_ticket'])) {
     $categoryId = $_POST['categoryId'];
     $manualCategory = trim($_POST['manual_category'] ?? '');
 
-    $catStmt = $pdo->prepare("SELECT categoryType, categoryName FROM category WHERE categoryId = ?");
+    $catStmt = $pdo->prepare("SELECT categoryId, categoryType, categoryName FROM category WHERE categoryId = ?");
     $catStmt->execute([$categoryId]);
     $catInfo = $catStmt->fetch();
 
-    if ($catInfo && $catInfo['categoryType'] === 'Others' && !empty($manualCategory)) {
+    if ($catInfo && $catInfo['categoryId'] == 26 && !empty($manualCategory)) {
         $description = "Custom Category: " . $manualCategory . "\n\n" . $description;
     }
 
@@ -142,11 +142,7 @@ include 'head.php';
             const manualCategoryInput = document.getElementById('manualCategoryInput');
 
             categorySelect.addEventListener('change', function() {
-                const selectedOption = this.options[this.selectedIndex];
-                const optgroup = selectedOption.closest('optgroup');
-                const groupLabel = optgroup ? optgroup.label : '';
-
-                if (groupLabel === 'Others') {
+                if (this.value == 26) {
                     manualContainer.style.display = 'block';
                     manualCategoryInput.setAttribute('required', 'required');
                     manualCategoryInput.focus();

@@ -28,6 +28,7 @@ function formatTimeAgo($datetime)
 }
 
 if (isset($_POST['submit_account'])) {
+    $editId = $_POST['edit_ticket_id'] ?? null;
     $serviceType = $_POST['categoryId'];
     $reason = trim($_POST['reason']);
     $priority = "Medium";
@@ -54,23 +55,25 @@ if (isset($_POST['submit_account'])) {
             "Systems: " . $systemList . "\n\n" .
             "REASON/PURPOSE:\n" . $reason;
 
-        $deptStmt = $pdo->prepare("SELECT departmentId FROM users WHERE userId = ?");
-        $deptStmt->execute([$userId]);
-        $userDeptId = $deptStmt->fetchColumn();
-
-        if (!$userDeptId) {
-            $userDeptId = 1;
-        }
-
-        $stmt = $pdo->prepare("INSERT INTO ticket (subject, categoryId, description, priority, status, departmentId, userId) VALUES (?, ?, ?, ?, 'Pending', ?, ?)");
-
         $subject = "Account Request (" . $systemList . ")";
 
-        if ($stmt->execute([$subject, $serviceType, $finalDescription, $priority, $_SESSION['department_id'], $userId])) {
-            header("Location: request_account.php?success=1");
-            exit;
+        if ($editId) {
+            $stmt = $pdo->prepare("UPDATE ticket SET categoryId = ?, description = ?, subject = ? WHERE ticketId = ? AND userId = ? AND status = 'Pending'");
+            if ($stmt->execute([$serviceType, $finalDescription, $subject, $editId, $userId])) {
+                header("Location: request_account.php?updated=1");
+                exit;
+            } else {
+                $msg = "Error updating request.";
+            }
         } else {
-            $msg = "Error submitting request.";
+            $stmt = $pdo->prepare("INSERT INTO ticket (subject, categoryId, description, priority, status, departmentId, userId) VALUES (?, ?, ?, ?, 'Pending', ?, ?)");
+
+            if ($stmt->execute([$subject, $serviceType, $finalDescription, $priority, $_SESSION['department_id'], $userId])) {
+                header("Location: request_account.php?success=1");
+                exit;
+            } else {
+                $msg = "Error submitting request.";
+            }
         }
     }
 }
@@ -112,6 +115,12 @@ include 'head.php';
                 <script>
                     document.addEventListener('DOMContentLoaded', function() {
                         Swal.fire({ icon: 'success', title: 'Submitted!', text: 'Your account request has been submitted.', timer: 3000, showConfirmButton: false });
+                    });
+                </script>
+                <?php elseif (isset($_GET['updated'])): ?>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        Swal.fire({ icon: 'success', title: 'Updated!', text: 'Your account request has been updated.', timer: 3000, showConfirmButton: false });
                     });
                 </script>
                 <?php elseif (!empty($msg)): ?>
@@ -218,6 +227,9 @@ include 'head.php';
                                         }
                                         echo "</td>";
                                         echo "<td class='py-3 text-end'>";
+                                        if ($row['status'] === 'Pending') {
+                                            echo "<button class='btn btn-sm btn-warning me-1 edit-request-btn' data-ticket='" . htmlspecialchars(json_encode($row), ENT_QUOTES) . "'><i class='bi bi-pencil'></i></button>";
+                                        }
                                         echo "<a href='view_ticket.php?id=" . $row['ticketId'] . "' class='btn btn-sm btn-light border'>View</a>";
                                         echo "</td></tr>";
                                     }
@@ -263,6 +275,7 @@ include 'head.php';
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <form method="POST" id="accountForm">
+                    <input type="hidden" name="edit_ticket_id" id="editTicketId" value="">
                     <div class="modal-body">
                         <div class="mb-4">
                             <label class="form-label small fw-bold">ACTION REQUIRED</label>
@@ -337,6 +350,48 @@ include 'head.php';
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
+        document.addEventListener('click', function(e) {
+            var btn = e.target.closest('.edit-request-btn');
+            if (!btn) return;
+            var ticket = JSON.parse(btn.getAttribute('data-ticket'));
+
+            document.getElementById('accountModalLabel').textContent = 'Edit Account Creation Request #' + ticket.ticketId;
+            document.getElementById('editTicketId').value = ticket.ticketId;
+
+            var desc = ticket.description || '';
+            var systemsMatch = desc.match(/Systems:\s*(.+)/);
+            var reasonMatch = desc.match(/REASON\/PURPOSE:\s*([\s\S]*)/);
+
+            var checkedSystems = [];
+            if (systemsMatch) {
+                checkedSystems = systemsMatch[1].split(',').map(function(s) { return s.trim(); });
+            }
+
+            document.querySelectorAll('#accountForm input[type=checkbox]').forEach(function(cb) {
+                var label = cb.nextElementSibling.textContent.trim();
+                cb.checked = checkedSystems.indexOf(label) !== -1;
+            });
+
+            var reasonText = reasonMatch ? reasonMatch[1].trim() : '';
+            var reasonArea = document.querySelector('#reasonDiv textarea');
+            reasonArea.value = reasonText;
+
+            var actionSelect = document.getElementById('actionSelect');
+            for (var i = 0; i < actionSelect.options.length; i++) {
+                if (actionSelect.options[i].text === ticket.categoryName) {
+                    actionSelect.selectedIndex = i;
+                    break;
+                }
+            }
+
+            toggleTransfer();
+
+            var modalEl = document.getElementById('accountRequestModal');
+            var modal = bootstrap.Modal.getInstance(modalEl);
+            if (!modal) modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        });
+
         function toggleTransfer() {
             var selectBox = document.getElementById("actionSelect");
             var hiddenBox = document.getElementById("transferBox");
@@ -384,6 +439,8 @@ include 'head.php';
             modalEl.addEventListener('hidden.bs.modal', function() {
                 var form = document.getElementById('accountForm');
                 if (form) form.reset();
+                document.getElementById('editTicketId').value = '';
+                document.getElementById('accountModalLabel').textContent = 'New Account Creation Request';
                 toggleTransfer();
             });
         }

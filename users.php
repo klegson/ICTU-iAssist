@@ -76,7 +76,7 @@ include 'head.php';
                                             <div class='rounded-circle bg-light border d-flex align-items-center justify-content-center me-3' style='width: 40px; height: 40px;'>
                                                 <i class='bi bi-person text-secondary'></i>
                                             </div>
-                                            " . htmlspecialchars($row['firstName'] . ' ' . $row['lastName']) . "
+                                            " . htmlspecialchars(formatName($row['firstName'], $row['middleName'], $row['lastName'])) . "
                                         </div>
                                       </td>";
                                 echo "<td>" . htmlspecialchars($row['email']) . "</td>";

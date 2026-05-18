@@ -16,7 +16,7 @@ $eventDateRaw = $_GET['date'];
 $location = $_GET['location'];
 
 $userId = $_SESSION['user_id'] ?? null;
-$sql = "SELECT u.firstName, u.lastName, u.signature, d.departmentName, d.section_unit 
+$sql = "SELECT u.firstName, u.middleName, u.lastName, u.signature, d.departmentName, d.section_unit 
         FROM users u 
         LEFT JOIN department d ON u.departmentId = d.departmentId 
         WHERE u.userId = ?";
@@ -24,7 +24,7 @@ $userStmt = $pdo->prepare($sql);
 $userStmt->execute([$userId]);
 $user = $userStmt->fetch();
 
-$borrowerName = $user ? $user['firstName'] . ' ' . $user['lastName'] : 'N/A';
+$borrowerName = $user ? formatName($user['firstName'], $user['middleName'] ?? '', $user['lastName']) : 'N/A';
 $signature = $user['signature'] ?? null;
 $divisionUnit = $user ? trim(($user['departmentName'] ?? '') . ($user['section_unit'] ? ' / ' . $user['section_unit'] : ''), ' /') : 'N/A';
 

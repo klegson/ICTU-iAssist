@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['complete_request'])) 
     }
 }
 
-$sql = "SELECT ar.*, u.firstName, u.lastName, d.departmentName, c.categoryName
+$sql = "SELECT ar.*, u.firstName, u.lastName, u.middleName, d.departmentName, c.categoryName
         FROM account_request ar
         JOIN users u ON ar.userId = u.userId
         LEFT JOIN department d ON u.departmentId = d.departmentId
@@ -57,7 +57,7 @@ if (!$request) {
     exit;
 }
 
-$techStmt = $pdo->query("SELECT userId, firstName, lastName FROM users WHERE role = 'Technician' AND isApproved = 1 ORDER BY firstName ASC");
+$techStmt = $pdo->query("SELECT userId, firstName, middleName, lastName FROM users WHERE role = 'Technician' AND isApproved = 1 ORDER BY firstName ASC");
 $technicians = $techStmt->fetchAll();
 
 $pageTitle = 'Manage Account Request #' . htmlspecialchars($requestId);
@@ -87,7 +87,7 @@ include 'head.php';
                                 <div class="row">
                                     <div class="col-md-6">
                                         <label class="small text-muted fw-bold">NAME</label>
-                                        <div class="text-dark"><?php echo htmlspecialchars($request['firstName'] . ' ' . $request['lastName']); ?></div>
+                                        <div class="text-dark"><?php echo htmlspecialchars(formatName($request['firstName'], $request['middleName'], $request['lastName'])); ?></div>
                                     </div>
                                     <div class="col-md-6">
                                         <label class="small text-muted fw-bold">DEPARTMENT</label>
@@ -159,7 +159,7 @@ include 'head.php';
                                             <option value="" disabled selected>-- Select Technician --</option>
                                             <?php foreach ($technicians as $tech): ?>
                                                 <option value="<?php echo $tech['userId']; ?>">
-                                                    <?php echo htmlspecialchars($tech['firstName'] . ' ' . $tech['lastName']); ?>
+                                                    <?php echo htmlspecialchars(formatName($tech['firstName'], $tech['middleName'], $tech['lastName'])); ?>
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>

@@ -30,7 +30,7 @@ if (isset($_POST['login'])) {
         } else {
             $_SESSION['user_id'] = $user['userId'];
             $_SESSION['role'] = $user['role'];
-            $_SESSION['fullname'] = $user['firstName'] . ' ' . $user['lastName'];
+            $_SESSION['fullname'] = formatName($user['firstName'], $user['middleName'], $user['lastName']);
             $_SESSION['department_id'] = $user['departmentId'];
 
             if (empty($user['signature'])) {

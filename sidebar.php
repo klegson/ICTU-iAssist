@@ -102,12 +102,6 @@ function isActive($pageName, $currentPage)
                         <i class="bi bi-people me-3 fs-5 align-middle"></i> Manage Users
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a href="manage_categories.php" class="nav-link <?= isActive('manage_categories.php', $currentPage) ?>">
-                        <i class="bi bi-tags me-3 fs-5 align-middle"></i> Manage Categories
-                    </a>
-                </li>
-
             <?php elseif ($role === 'Technician'): ?>
                 <li class="nav-item">
                     <a href="db_technician.php" class="nav-link <?= isActive('db_technician.php', $currentPage) ?>">

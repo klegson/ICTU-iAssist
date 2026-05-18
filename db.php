@@ -48,3 +48,8 @@ function timeAgo($datetime)
         return "$years years ago";
     }
 }
+
+function formatName($first, $middle, $last) {
+    $initial = (!empty($middle) && trim($middle) !== '') ? ' ' . mb_substr(trim($middle), 0, 1) . '.' : '';
+    return $first . $initial . ' ' . $last;
+}

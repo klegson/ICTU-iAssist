@@ -110,7 +110,7 @@ include 'head.php';
                                     <tbody>
                                         <?php foreach ($pendingUsers as $user): ?>
                                             <tr>
-                                                <td class="fw-bold"><?php echo htmlspecialchars($user['firstName'] . ' ' . $user['lastName']); ?></td>
+                                                <td class="fw-bold"><?php echo htmlspecialchars(formatName($user['firstName'], $user['middleName'], $user['lastName'])); ?></td>
                                                 <td><?php echo htmlspecialchars($user['email']); ?></td>
                                                 <td><span class="badge bg-secondary"><?php echo htmlspecialchars($user['role']); ?></span></td>
                                                 <td class="text-muted small"><?php echo date("M d, Y", strtotime($user['createdAt'])); ?></td>
@@ -147,7 +147,7 @@ include 'head.php';
                                 <tbody>
                                     <?php foreach ($activeUsers as $user): ?>
                                         <tr>
-                                            <td class="fw-bold text-dark"><?php echo htmlspecialchars($user['firstName'] . ' ' . $user['lastName']); ?></td>
+                                            <td class="fw-bold text-dark"><?php echo htmlspecialchars(formatName($user['firstName'], $user['middleName'], $user['lastName'])); ?></td>
                                             <td class="text-muted"><?php echo htmlspecialchars($user['email']); ?></td>
                                             <td>
                                                 <?php

@@ -46,8 +46,9 @@ $totalTickets = array_sum($stats);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['update_profile'])) {
-        $firstName = trim($_POST['firstName']);
-        $lastName = trim($_POST['lastName']);
+                    $firstName = trim($_POST['firstName']);
+                    $middleName = trim($_POST['middleName'] ?? '');
+                    $lastName = trim($_POST['lastName']);
         $email = trim($_POST['email']);
         $phone = trim($_POST['phone'] ?? '');
         $positionID = !empty($_POST['positionID']) ? (int)$_POST['positionID'] : null;
@@ -80,16 +81,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (empty($errors)) {
             try {
-                if (!empty($newPassword)) {
-                    $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-                    $updateSql = "UPDATE users SET firstName = ?, lastName = ?, email = ?, phone = ?, positionID = ?, password = ? WHERE userId = ?";
-                    $updateStmt = $pdo->prepare($updateSql);
-                    $updateStmt->execute([$firstName, $lastName, $email, $phone, $positionID, $hashedPassword, $userId]);
-                    $_SESSION['fullname'] = $firstName . ' ' . $lastName;
+                    if (!empty($newPassword)) {
+                        $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+                        $updateSql = "UPDATE users SET firstName = ?, middleName = ?, lastName = ?, email = ?, phone = ?, positionID = ?, password = ? WHERE userId = ?";
+                        $updateStmt = $pdo->prepare($updateSql);
+                        $updateStmt->execute([$firstName, $middleName, $lastName, $email, $phone, $positionID, $hashedPassword, $userId]);
+                    $_SESSION['fullname'] = formatName($firstName, $middleName, $lastName);
                 } else {
-                    $updateSql = "UPDATE users SET firstName = ?, lastName = ?, email = ?, phone = ?, positionID = ? WHERE userId = ?";
+                    $updateSql = "UPDATE users SET firstName = ?, middleName = ?, lastName = ?, email = ?, phone = ?, positionID = ? WHERE userId = ?";
                     $updateStmt = $pdo->prepare($updateSql);
-                    $updateStmt->execute([$firstName, $lastName, $email, $phone, $positionID, $userId]);
+                    $updateStmt->execute([$firstName, $middleName, $lastName, $email, $phone, $positionID, $userId]);
                 }
 
                 if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
@@ -181,7 +182,7 @@ include 'head.php';
                                 <input type="file" name="profilePicture" id="profilePicture" class="d-none" accept="image/*" onchange="this.form.submit()">
                                 <input type="hidden" name="upload_picture" value="1">
                             </form>
-                            <h4 class="fw-bold mb-1"><?php echo htmlspecialchars($user['firstName'] . ' ' . $user['lastName']); ?></h4>
+                            <h4 class="fw-bold mb-1"><?php echo htmlspecialchars(formatName($user['firstName'], $user['middleName'], $user['lastName'])); ?></h4>
                             <span class="badge <?php
                                                 echo $user['role'] === 'Officer' ? 'bg-dark' : ($user['role'] === 'Technician' ? 'bg-info text-dark' : 'bg-secondary');
                                                 ?> mb-3">
@@ -248,11 +249,15 @@ include 'head.php';
                         <div class="card-body">
                             <form method="POST" action="">
                                 <div class="row g-3">
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <label class="form-label">First Name</label>
                                         <input type="text" class="form-control" name="firstName" value="<?php echo htmlspecialchars($user['firstName']); ?>" required>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Middle Name</label>
+                                        <input type="text" class="form-control" name="middleName" value="<?php echo htmlspecialchars($user['middleName'] ?? ''); ?>">
+                                    </div>
+                                    <div class="col-md-4">
                                         <label class="form-label">Last Name</label>
                                         <input type="text" class="form-control" name="lastName" value="<?php echo htmlspecialchars($user['lastName']); ?>" required>
                                     </div>

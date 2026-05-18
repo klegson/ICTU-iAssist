@@ -15,6 +15,10 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Officer') {
 }
 $page = 'reports';
 
+$selectedMonth = isset($_GET['month']) ? $_GET['month'] : 'all';
+$selectedYear = isset($_GET['year']) ? $_GET['year'] : 'all';
+$selectedPriority = isset($_GET['priority']) ? $_GET['priority'] : 'all';
+
 $trendSql = "SELECT
                 DATE_FORMAT(createdAt, '%Y-%m') as sort_date,
                 DATE_FORMAT(createdAt, '%M %Y') as month_label,
@@ -23,10 +27,31 @@ $trendSql = "SELECT
                 SUM(CASE WHEN status = 'Processing' THEN 1 ELSE 0 END) as processing,
                 SUM(CASE WHEN status IN ('Resolved', 'Completed') THEN 1 ELSE 0 END) as completed
             FROM ticket
-            GROUP BY sort_date, month_label
-            ORDER BY sort_date ASC
-            LIMIT 12";
-$trendStmt = $pdo->query($trendSql);
+            WHERE 1=1";
+
+$trendParams = [];
+
+if ($selectedPriority === 'express') {
+    $trendSql .= " AND priority = 'Express'";
+} elseif ($selectedPriority === 'normal') {
+    $trendSql .= " AND priority IN ('Low', 'Medium', 'High')";
+}
+
+if ($selectedMonth !== 'all') {
+    $trendSql .= " AND DATE_FORMAT(createdAt, '%m') = ?";
+    $trendParams[] = $selectedMonth;
+}
+
+if ($selectedYear !== 'all') {
+    $trendSql .= " AND DATE_FORMAT(createdAt, '%Y') = ?";
+    $trendParams[] = $selectedYear;
+}
+
+$trendSql .= " GROUP BY sort_date, month_label
+               ORDER BY sort_date ASC
+               LIMIT 12";
+$trendStmt = $pdo->prepare($trendSql);
+$trendStmt->execute($trendParams);
 
 $months = [];
 $dataPending = [];
@@ -39,9 +64,6 @@ while ($row = $trendStmt->fetch()) {
     $dataProcessing[] = (int)$row['processing'];
     $dataCompleted[] = (int)$row['completed'];
 }
-
-$selectedMonth = isset($_GET['month']) ? $_GET['month'] : 'all';
-$selectedYear = isset($_GET['year']) ? $_GET['year'] : 'all';
 
 $divSql = "SELECT
                 DATE_FORMAT(t.createdAt, '%M %Y') as month_label,
@@ -64,6 +86,12 @@ if ($selectedMonth !== 'all') {
 if ($selectedYear !== 'all') {
     $divSql .= " AND DATE_FORMAT(t.createdAt, '%Y') = ?";
     $divParams[] = $selectedYear;
+}
+
+if ($selectedPriority === 'express') {
+    $divSql .= " AND t.priority = 'Express'";
+} elseif ($selectedPriority === 'normal') {
+    $divSql .= " AND t.priority IN ('Low', 'Medium', 'High')";
 }
 
 $divSql .= " GROUP BY DATE_FORMAT(t.createdAt, '%Y-%m'), month_label, d.departmentName
@@ -90,6 +118,7 @@ $monthsArr = [
 
 $monthLabel = ($selectedMonth === 'all') ? 'All Months' : $monthsArr[$selectedMonth];
 $yearLabel = ($selectedYear === 'all') ? 'All Years' : $selectedYear;
+$priorityLabel = ($selectedPriority === 'all') ? 'All Types' : ucfirst($selectedPriority);
 
 $pageTitle = 'Monthly Reports - DepEd Helpdesk';
 include 'head.php';
@@ -137,6 +166,7 @@ include 'head.php';
 
                         <input type="hidden" id="monthInput" value="<?php echo $selectedMonth; ?>">
                         <input type="hidden" id="yearInput" value="<?php echo $selectedYear; ?>">
+                        <input type="hidden" id="priorityInput" value="<?php echo $selectedPriority; ?>">
 
                         <div class="btn-group dropup me-2">
                             <button type="button" class="btn btn-sm filter-btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" id="monthBtn" style="width: 130px;">
@@ -150,7 +180,7 @@ include 'head.php';
                             </ul>
                         </div>
 
-                        <div class="btn-group dropup">
+                        <div class="btn-group dropup me-2">
                             <button type="button" class="btn btn-sm filter-btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" id="yearBtn" style="width: 100px;">
                                 <?php echo $yearLabel; ?>
                             </button>
@@ -161,6 +191,17 @@ include 'head.php';
                                 for ($y = 2024; $y <= $currentYear + 2; $y++): ?>
                                     <li><a class="dropdown-item year-opt <?php echo ($selectedYear == $y) ? 'active' : ''; ?>" href="#" data-val="<?php echo $y; ?>"><?php echo $y; ?></a></li>
                                 <?php endfor; ?>
+                            </ul>
+                        </div>
+
+                        <div class="btn-group dropup">
+                            <button type="button" class="btn btn-sm filter-btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" id="priorityBtn" style="width: 110px;">
+                                <?php echo $priorityLabel; ?>
+                            </button>
+                            <ul class="dropdown-menu shadow-sm">
+                                <li><a class="dropdown-item priority-opt <?php echo ($selectedPriority === 'all') ? 'active' : ''; ?>" href="#" data-val="all">All Types</a></li>
+                                <li><a class="dropdown-item priority-opt <?php echo ($selectedPriority === 'express') ? 'active' : ''; ?>" href="#" data-val="express">Express</a></li>
+                                <li><a class="dropdown-item priority-opt <?php echo ($selectedPriority === 'normal') ? 'active' : ''; ?>" href="#" data-val="normal">Normal</a></li>
                             </ul>
                         </div>
                     </div>
@@ -262,9 +303,10 @@ include 'head.php';
         document.addEventListener('DOMContentLoaded', function() {
             const monthInput = document.getElementById('monthInput');
             const yearInput = document.getElementById('yearInput');
+            const priorityInput = document.getElementById('priorityInput');
             const monthBtn = document.getElementById('monthBtn');
             const yearBtn = document.getElementById('yearBtn');
-            const tableBody = document.getElementById('reportTableBody');
+            const priorityBtn = document.getElementById('priorityBtn');
 
             // Handle Month Selection
             document.querySelectorAll('.month-opt').forEach(item => {
@@ -274,7 +316,7 @@ include 'head.php';
                     this.classList.add('active');
                     monthBtn.innerHTML = this.innerHTML;
                     monthInput.value = this.getAttribute('data-val');
-                    updateTableSilently();
+                    applyFilters();
                 });
             });
 
@@ -286,38 +328,27 @@ include 'head.php';
                     this.classList.add('active');
                     yearBtn.innerHTML = this.innerHTML;
                     yearInput.value = this.getAttribute('data-val');
-                    updateTableSilently();
+                    applyFilters();
                 });
             });
 
-            function updateTableSilently() {
+            // Handle Priority Selection
+            document.querySelectorAll('.priority-opt').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    document.querySelectorAll('.priority-opt').forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                    priorityBtn.innerHTML = this.innerHTML;
+                    priorityInput.value = this.getAttribute('data-val');
+                    applyFilters();
+                });
+            });
+
+            function applyFilters() {
                 const month = monthInput.value;
                 const year = yearInput.value;
-
-                tableBody.style.opacity = '0.4';
-                tableBody.style.transition = 'opacity 0.2s';
-
-                const url = `reports.php?month=${month}&year=${year}`;
-
-                fetch(url)
-                    .then(response => response.text())
-                    .then(html => {
-                        const parser = new DOMParser();
-                        const doc = parser.parseFromString(html, 'text/html');
-
-                        const newTableBody = doc.getElementById('reportTableBody');
-
-                        if (newTableBody) {
-                            tableBody.innerHTML = newTableBody.innerHTML;
-                        }
-
-                        tableBody.style.opacity = '1';
-                        window.history.pushState({}, '', url);
-                    })
-                    .catch(error => {
-                        console.error('Error fetching data:', error);
-                        tableBody.style.opacity = '1';
-                    });
+                const priority = priorityInput.value;
+                window.location.href = `reports.php?month=${month}&year=${year}&priority=${priority}`;
             }
         });
     </script>

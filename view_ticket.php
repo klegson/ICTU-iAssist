@@ -12,15 +12,14 @@ $ticketId = $_GET['id'] ?? null;
 $userId = $_SESSION['user_id'];
 $role = $_SESSION['role'];
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['complete_ticket'])) {
-    $_SESSION['pending_completion'] = $ticketId;
-    header("Location: view_ticket.php?id=" . $ticketId);
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_completion'])) {
+    $update = $pdo->prepare("UPDATE ticket SET status = 'Completed', completedAt = NOW() WHERE ticketId = ? AND userId = ?");
+    $update->execute([$ticketId, $userId]);
+    header("Location: view_ticket.php?id=" . $ticketId . "&completed=1");
     exit;
 }
 
-$showSurveyModal = isset($_SESSION['pending_completion']) && $_SESSION['pending_completion'] == $ticketId;
-
-$sql = "SELECT t.*, u.firstName, u.lastName, u.email, d.departmentName, d.departmentHead, c.categoryName,
+$sql = "SELECT t.*, u.firstName, u.lastName, u.middleName, u.email, d.departmentName, d.departmentHead, c.categoryName, c.categoryType,
         tech.firstName AS techFirstName, tech.lastName AS techLastName,
         e.firstName AS h_fn, e.middleName AS h_mn, e.lastName AS h_ln, e.extension AS h_ext, e.positionTitle AS h_pos
         FROM ticket t 
@@ -28,7 +27,7 @@ $sql = "SELECT t.*, u.firstName, u.lastName, u.email, d.departmentName, d.depart
         LEFT JOIN department d ON u.departmentId = d.departmentId
         LEFT JOIN employees e ON d.departmentHead = e.employeeID
         LEFT JOIN category c ON t.categoryId = c.categoryId
-        LEFT JOIN users tech ON t.assignedTo = tech.userId
+        LEFT JOIN users tech ON t.resolvedBy = tech.userId
         WHERE t.ticketId = ?";
 
 if ($role === 'User') {
@@ -58,48 +57,89 @@ include 'head.php';
 <body>
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <?php if (isset($showSurveyModal) && $showSurveyModal): ?>
-        <div class="modal fade" id="surveyModal" tabindex="-1">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content border-0 shadow-lg rounded-4">
-                    <div class="modal-header border-0">
-                        <h5 class="modal-title fw-bold text-dark"><i class="bi bi-star-fill text-warning me-2"></i>Rate Our Service</h5>
+    <div class="modal fade" id="surveyModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold text-dark"><i class="bi bi-star-fill text-warning me-2"></i>Rate Our Service</h5>
+                </div>
+                <div class="modal-body py-4">
+                    <iframe src="https://forms.office.com/Pages/ResponsePage.aspx?id=gKvjQCQgo0W_dnoHYaJNKZVrGLcKRchGg0_5vlA39MhURDc2OU5GTENEVEw2WlJPU1JYSDRXWVZBVi4u&embed=true"
+                            id="survey-iframe"
+                            width="100%" height="500" frameborder="0"
+                            style="border-radius: 8px; border: 1px solid #dee2e6;">
+                    </iframe>
+
+                    <div id="survey-status" class="text-center py-3 text-muted">
+                        <i class="bi bi-info-circle me-1"></i> Please complete the survey above, then click confirm below.
                     </div>
-                    <div class="modal-body text-center py-4">
-                        <p class="text-muted mb-4">Please take a moment to complete the survey. Your feedback helps us improve.</p>
-                        <div class="mb-4">
-                            <a href="https://forms.office.com/pages/responsepage.aspx?id=gKvjQCQgo0W_dnoHYaJNKZVrGLcKRchGg0_5vlA39MhURDc2OU5GTENEVEw2WlJPU1JYSDRXWVZBVi4u" target="_blank" class="btn btn-success fw-bold px-5 py-2 rounded-3">
-                                <i class="bi bi-clipboard-check me-2"></i>Complete Survey
-                            </a>
-                        </div>
-                        <p class="text-muted small mb-3">After completing the survey, click the button below to confirm.</p>
-                        <a href="complete_ticket.php?ticket_id=<?php echo $ticketId; ?>" class="btn btn-outline-success px-4">
+
+                    <form method="POST" action="view_ticket.php?id=<?php echo $ticketId; ?>" class="text-center">
+                        <button type="submit" name="confirm_completion" id="confirm-completion-btn"
+                                class="btn btn-outline-success px-5 py-2 rounded-3" disabled>
                             <i class="bi bi-check-circle me-2"></i>Confirm Completion
-                        </a>
-                    </div>
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                var modal = new bootstrap.Modal(document.getElementById('surveyModal'));
-                modal.show();
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var modal = new bootstrap.Modal(document.getElementById('surveyModal'), { backdrop: 'static', keyboard: false });
+
+            var btn = document.getElementById('confirm-completion-btn');
+            var status = document.getElementById('survey-status');
+            var isFinished = false;
+
+            function enableCompletion() {
+                if (isFinished) return;
+                isFinished = true;
+                btn.disabled = false;
+                btn.className = 'btn btn-success px-5 py-2 rounded-3';
+                status.innerHTML = '<i class="bi bi-check-circle-fill text-success me-1"></i> Ready to complete — click Confirm below.';
+                status.className = 'text-center py-3 text-success';
+            }
+
+            window.addEventListener('message', function(e) {
+                try {
+                    var d = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+                    if (d.eventType === 'onSubmitForm' ||
+                        (d.eventName && d.eventName.indexOf('Submit') !== -1) ||
+                        d.type === 'submit') {
+                        enableCompletion();
+                    }
+                } catch(err) {}
             });
-        </script>
-    <?php endif; ?>
+
+            var iframe = document.getElementById('survey-iframe');
+            iframe.onload = function() {
+                setTimeout(function() {
+                    if (btn.disabled && !isFinished) {
+                        status.innerHTML = '<i class="bi bi-exclamation-circle text-warning me-1"></i> If you\'ve completed the survey, ' +
+                            '<a href="#" id="fallback-enable" class="fw-bold">click here to continue</a>.';
+                        document.getElementById('fallback-enable').onclick = function(e) {
+                            e.preventDefault();
+                            enableCompletion();
+                        };
+                    }
+                }, 25000);
+            };
+        });
+    </script>
 
     <div class="d-flex flex-column flex-md-row" style="min-height: 100vh;">
         <?php include 'sidebar.php'; ?>
 
         <div class="flex-grow-1 bg-light main-content" style="min-height: 100vh; overflow-y: auto;">
-
+            <?php include 'header.php'; ?>
             <div class="container-fluid py-5 px-5">
                 <div class="d-flex justify-content-between align-items-center mb-5">
                     <div>
                         <h2 class="fw-bold text-dark mb-0">Ticket #<?php echo htmlspecialchars($ticketId); ?></h2>
                         <div class="text-muted small mt-1">Created on <?php echo date("F d, Y \• h:i A", strtotime($ticket['createdAt'])); ?></div>
                     </div>
-                    <a href="ticket_history.php" class="btn btn-outline-secondary px-4 bg-white"><i class="bi bi-arrow-left me-2"></i>Back to Dashboard</a>
+                    <a href="<?= ($ticket['categoryType'] ?? '') === 'Account Services' ? 'request_account.php' : 'ticket_history.php' ?>" class="btn btn-outline-secondary px-4 bg-white"><i class="bi bi-arrow-left me-2"></i>Back to Dashboard</a>
                 </div>
 
                 <div class="row g-4">
@@ -245,13 +285,13 @@ include 'head.php';
 
                             <div class="mb-2">
                                 <label class="small text-muted fw-bold text-uppercase mb-2">Requestor</label>
-                                <div class="text-dark"><?php echo htmlspecialchars($ticket['firstName'] . ' ' . $ticket['lastName']); ?></div>
+                                <div class="text-dark"><?php echo htmlspecialchars(formatName($ticket['firstName'], $ticket['middleName'], $ticket['lastName'])); ?></div>
                                 <div class="small text-muted"><?php echo htmlspecialchars($ticket['departmentName'] ?? 'No Department'); ?></div>
                                 <?php
                                 $headName = trim(($ticket['h_fn'] ?? '') . ' ' . ($ticket['h_mn'] ?? '') . ' ' . ($ticket['h_ln'] ?? '') . ' ' . ($ticket['h_ext'] ?? ''));
                                 $headName = trim(preg_replace('/\s+/', ' ', $headName));
                                 if ($headName): ?>
-                                <div class="small text-muted mt-1"><i class="bi bi-person-badge me-1"></i>Dept Head: <?php echo htmlspecialchars($headName . ' — ' . ($ticket['h_pos'] ?? 'N/A')); ?></div>
+                                    <div class="small text-muted mt-1"><i class="bi bi-person-badge me-1"></i>Dept Head: <?php echo htmlspecialchars($headName . ' — ' . ($ticket['h_pos'] ?? 'N/A')); ?></div>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -264,11 +304,9 @@ include 'head.php';
                                 <h5 class="fw-bold text-dark mb-2">Is it working now?</h5>
                                 <p class="text-muted small mb-4">Please confirm that your issue has been fully resolved by the ICT team.</p>
 
-                                <form method="POST">
-                                    <button type="submit" name="complete_ticket" class="btn btn-success fw-bold w-100 py-3 shadow-sm rounded-3">
-                                        Mark as Completed
-                                    </button>
-                                </form>
+                                <button type="button" data-bs-toggle="modal" data-bs-target="#surveyModal" class="btn btn-success fw-bold w-100 py-3 shadow-sm rounded-3">
+                                    Mark as Completed
+                                </button>
                             </div>
                         <?php endif; ?>
                     </div>
